@@ -1,0 +1,143 @@
+{{ sc_form }}
+
+<style>
+    form#form .nav-tabs { margin-bottom: -1px; }
+</style>
+
+{{ header }}{{ column_left }}
+
+<div id="content">
+    <div class="page-header">
+        <div class="container-fluid">
+            <div class="pull-right">
+                <a onclick="$('#nuvei_save_settings').trigger('click');" class="btn btn-primary" style="cursor:pointer">
+                    <i class="fa fa-save"></i>
+                </a>
+                
+                <a class="btn btn-default" title="" data-toggle="tooltip" href="{{ cancel }}" data-original-title="Cancel">
+                    <i class="fa fa-reply"></i>
+                </a>
+            </div>
+            
+            <h1>{{ heading }}</h1>
+            
+            <ul class="breadcrumb">
+                {% for breadcrumb in breadcrumbs %}
+                    <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    
+    <div class="container-fluid">
+        {% if error_warning %}
+            <div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-pencil"></i> {{ text_edit }}</h3>
+        </div>
+        
+        <div class="panel-body">
+            {% if success %}
+                <div class="alert alert-success alert-dismissible">
+                    <i class="fa fa-check-circle"></i> {{ text_success }}
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                </div>
+            {% endif %}
+            
+            <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form" class="form-horizontal">
+                <div class="form-wrapper panel-default with-nav-tabs panel-default">
+                    <!-- tab buttons -->
+                    <div class="panel-heading" style="padding-bottom: 0px;">
+                        <ul class="nav nav-tabs">
+                            <li class="active">
+                                <a href="#nuvei_general" data-toggle="tab">{{ text_general_tab }}</a>
+                            </li>
+
+                            <li><a href="#nuvei_advanced" data-toggle="tab">{{ text_advanced_tab }}</a></li>
+                            <li><a href="#nuvei_tools" data-toggle="tab">{{ text_tools_tab }}</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="panel-body">
+                        <div class="tab-content">
+                            <!-- General settings -->
+                            <div class="tab-pane fade in active" id="nuvei_general">
+                                <!-- Sandbox mode -->
+                                <div class="form-group required">
+                                    <label class="col-sm-2 control-label">{{ entry_test_mode }}</label>
+                                    <div class="col-sm-10">
+                                        <select class="form-control" name="{{ NUVEI_SETTINGS_PREFIX }}test_mode" required="">
+                                            <option value="">{{ text_select_option }}</option>
+
+                                            <option value="1" {% if _context[NUVEI_SETTINGS_PREFIX ~ 'test_mode'] == 1 %}selected="selected"{% endif %}>{{ text_yes }}</option>
+                                            
+                                            <option value="0" {% if _context[NUVEI_SETTINGS_PREFIX ~ 'test_mode'] == 0 %}selected="selected"{% endif %}>{{ text_no }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Merchant ID -->
+                                <div class="form-group required">
+                                    <label class="col-sm-2 control-label">{{ entry_merchantId }}</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" name="{{ NUVEI_SETTINGS_PREFIX }}merchantId" value="{{ _context[NUVEI_SETTINGS_PREFIX ~ 'merchantId'] }}" class="form-control" pattern="[0-9]+" required="" />
+                                    </div>
+                                </div>
+                                    
+                                <!-- Merchant Site ID -->
+                                <div class="form-group required">
+                                    <label class="col-sm-2 control-label" for="input-order-status">{{ entry_merchantSiteId }}</label>
+                                    <div class="col-sm-10">
+                                        <input class="form-control" type="text" name="{{ NUVEI_SETTINGS_PREFIX }}merchantSiteId" value="{{ _context[NUVEI_SETTINGS_PREFIX ~ 'merchantSiteId'] }}" pattern="[0-9]+" required="" />
+                                    </div>
+                                </div>
+                                
+                                <!-- Merchant Secret Key -->
+                                <div class="form-group required">
+                                    <label class="col-sm-2 control-label">{{ entry_secret }}</label>
+                                    <div class="col-sm-10">
+                                        <input class="form-control" type="password" name="{{ NUVEI_SETTINGS_PREFIX }}secret" value="{{ _context[NUVEI_SETTINGS_PREFIX ~ 'secret'] }}" required="" autocomplete="false" />
+                                    </div>
+                                </div>
+                                
+                                <!-- Merchant Hash type -->
+                                <div class="form-group required">
+                                    <label class="col-sm-2 control-label">{{ entry_hash }}</label>
+
+                                    <div class="col-sm-10">
+                                        <select class="form-control" name="{{ NUVEI_SETTINGS_PREFIX }}hash" required="">
+                                            <option value="">{{ text_select_option }}</option>
+
+                                            <option value="sha256" <?php if (@$data[NUVEI_SETTINGS_PREFIX . 'hash'] == "sha256"): ?>selected="selected"<?php endif; ?>>sha256</option>
+
+                                            <option value="md5" <?php if (@$data[NUVEI_SETTINGS_PREFIX . 'hash'] == "md5"): ?>selected="selected"<?php endif; ?>>md5</option>
+                                        </select>
+                                        
+                                        <?php /* if ($data['error_hash']): ?>
+                                            <span class="text-danger"><?= $data['error_hash']; ?></span>
+                                        <?php endif; */ ?>
+                                    </div>
+                                </div>
+                                
+                                
+                            </div>
+                            
+                                        
+                                        
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="nuvei_save_settings" type="submit" style="display: none;">Save</button>
+            </form>
+            
+        </div>
+        
+    </div>
+</div>

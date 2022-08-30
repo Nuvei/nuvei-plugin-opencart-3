@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>Nuvei Checkout Modifications</name>
+    <code>Nuvei</code>
+    <version>1.0</version>
+    <author>Nuvei</author>
+    <link>https://www.nuvei.com/</link>
+    
+    <!-- append Nuvei Checkout SDK script to the header -->
+    <file path="catalog/controller/common/header.php">
+        <operation>
+            <search><![CDATA[
+                $data['scripts'] = $this->document->getScripts('header');
+            ]]></search>
+            
+			<add position="before"><![CDATA[
+                # Nuvei Modification
+				require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'catalog_header.php';
+                # /Nuvei Modification
+            ]]></add>
+        </operation>
+    </file>
+    
+    <!-- append Nuvei JS file to check for new version -->
+    <file path="admin/controller/common/header.php">
+        <operation>
+            <search><![CDATA[
+                $data['scripts'] = $this->document->getScripts('header');
+            ]]></search>
+            
+			<add position="after"><![CDATA[
+                # Nuvei Modification
+				require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'catalog_header.php';
+                # /Nuvei Modification
+            ]]></add>
+        </operation>
+    </file>
+	
+	<!-- modify file again to preview net Total (after refunds) in the Orders list -->
+    <file path="admin/controller/sale/order.php">
+        <operation>
+            <search><![CDATA[
+                if (isset($this->error['warning'])) {
+            ]]></search>
+            
+            <add position="before"><![CDATA[
+                # Nuvei Modification
+                require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'sale_order_2.php';
+                # /Nuvei Modification
+            ]]></add>
+        </operation>
+    </file>
+	
+	<!-- load in controller Nuvei translations -->
+    <file path="admin/controller/sale/order.php">
+        <operation>
+            <search><![CDATA[
+                $data['text_order'] = sprintf($this->language->get('text_order'), $this->request->get['order_id']);
+            ]]></search>
+            
+            <add position="after"><![CDATA[
+                # Nuvei Modification
+				require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'sale_order_3.php';
+				# /Nuvei Modification
+            ]]></add>
+        </operation>
+    </file>
+	
+	<!-- In the Order Info, History table use full date for the comments -->
+	<file path="admin/controller/sale/order.php">
+        <operation>
+            <search><![CDATA[
+                'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added']))
+            ]]></search>
+            
+            <add position="replace"><![CDATA[
+                # Nuvei Modification
+				'date_added' => date($this->language->get('datetime_format'), strtotime($result['date_added']))
+				# Nuvei Modification END
+            ]]></add>
+        </operation>
+    </file>
+</modification>
