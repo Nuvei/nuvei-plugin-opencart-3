@@ -37,6 +37,10 @@ $_['text_block_pms_help']   = 'For examples <a href="https://docs.nuvei.com/docu
 
 $_['text_change_order_status'] = 'Change the Order status to Pending on successful UpdateOrder request. By default OpenCart keep not finished Orders hidden and we do not recommend using Yes option on Prod.';
 
+$_['text_no_github_plugin_version']     = 'Nuvei message - can not find the plugin version into github changelog file.';
+$_['text_github_plugin_same_version']   = 'Git version is same as the current plugin version.';
+$_['text_github_new_plugin_version']    = 'There is <a href="https://github.com/SafeChargeInternational/nuvei_checkout_opencart3/blob/main/CHANGELOG.md">newer version</a> for Nuvei Checkout plugin.';
+
 // Entry					
 $_['entry_merchantId']      = 'Merchant ID:';
 $_['entry_merchantSiteId']  = 'Merchant Site ID:';

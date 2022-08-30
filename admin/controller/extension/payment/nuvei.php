@@ -233,6 +233,10 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->ajax_action = $this->request->post['action'];
         
         switch ($this->ajax_action) {
+            case 'checkForUpdate':
+                $this->check_for_update();
+                exit;
+                
             case 'getNuveiVars':
                 $this->get_nuvei_vars();
                 exit;
@@ -898,5 +902,50 @@ class ControllerExtensionPaymentNuvei extends Controller
     {
         $new_price = round((float) $price * $this->data['currency_value'], 2);
         return number_format($new_price, 2, '.', '');
+    }
+    
+    /**
+     * Check for newer version of the plugin.
+     */
+    private function check_for_update()
+    {
+        $matches = array();
+        $ch      = curl_init();
+
+        curl_setopt(
+            $ch,
+            CURLOPT_URL,
+            'https://raw.githubusercontent.com/SafeChargeInternational/nuvei_checkout_opencart3/main/CHANGELOG.md'
+        );
+
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        $file_text = curl_exec($ch);
+        curl_close($ch);
+
+        preg_match('/(#\s[0-9]\.[0-9])(\n)?/', $file_text, $matches);
+
+        if (!isset($matches[1])) {
+            exit(json_encode([
+                'status'    => 0,
+                'msg'       => $this->language->get('text_no_github_plugin_version')
+            ]));
+        }
+        
+        $git_v  = (int) str_replace('.', '', trim($matches[1]));
+        $curr_v = (int) str_replace('.', '', NUVEI_PLUGIN_V);
+        
+        if($git_v <= $curr_v) {
+            exit(json_encode([
+                'status'    => 0,
+                'msg'       => $this->language->get('text_github_plugin_same_version')
+            ]));
+        }
+        
+        exit(json_encode([
+            'status'    => 1,
+            'msg'       => $this->language->get('text_github_new_plugin_version'),
+        ]));
     }
 }
