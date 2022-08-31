@@ -798,7 +798,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 //								$curr_refund_amount,
 								$total_amount,
 								$this->order_info['currency_code'],
-								$this->order_info['currency_value']
+								1 // because we pass converted amount, else - $this->order_info['currency_value']
 							);
 							
 							$message .= $this->language->get('Refund Amount: ') . $formated_refund;
