@@ -254,16 +254,16 @@
                                 </div>
                                 
                                 <!-- Preselect Nuvei provider -->
-                                <div class="form-group">
+<!--                                <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_preselect_nuvei'); ?></label>
                                     <div class="col-lg-10">
                                         <select name="<?= NUVEI_SETTINGS_PREFIX; ?>preselect_nuvei" class="form-control">
-                                            <option value="0" <?php if (@$data[NUVEI_SETTINGS_PREFIX . 'preselect_nuvei'] == "0"): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_yes'); ?></option>
+                                            <option value="0" <?php if (@$data[NUVEI_SETTINGS_PREFIX . 'preselect_nuvei'] == "0"): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_no'); ?></option>
 
                                             <option value="1" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'preselect_nuvei'] == "1"): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_yes'); ?></option>
                                         </select>
                                     </div>
-                                </div>
+                                </div>-->
 
                                 <!-- SDK version -->
                                 <div class="form-group">

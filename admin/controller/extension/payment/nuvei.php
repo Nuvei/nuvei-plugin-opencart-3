@@ -723,6 +723,10 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $nuvei_block_pms = @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'block_pms'];
         
+        if(!is_array($nuvei_block_pms)) {
+            $nuvei_block_pms = [];
+        }
+        
         NUVEI_CLASS::create_log($this->plugin_settings, $nuvei_block_pms, '$nuvei_block_pms');
 			
 		$apms_params		= array(
@@ -738,6 +742,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         );
         
 		if(!empty($res['paymentMethods']) && is_array($res['paymentMethods'])) {
+            
             foreach($res['paymentMethods'] as $pm) {
                 if(empty($pm['paymentMethod'])) {
                     continue;
@@ -752,12 +757,10 @@ class ControllerExtensionPaymentNuvei extends Controller
                     $pm_name = ucfirst(str_replace('_', ' ', $pm['paymentMethod']));
                 }
                 
-                if(!empty($nuvei_block_pms) && is_array($nuvei_block_pms)) {
-                    $payment_methods[$pm['paymentMethod']] = [
-                        'name'      => $pm_name,
-                        'selected'  => in_array($pm['paymentMethod'], $nuvei_block_pms) ? 1 : 0
-                    ];
-                }
+                $payment_methods[$pm['paymentMethod']] = [
+                    'name'      => $pm_name,
+                    'selected'  => in_array($pm['paymentMethod'], $nuvei_block_pms) ? 1 : 0
+                ];
             }
 		}
         
