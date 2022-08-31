@@ -1060,6 +1060,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 		$params = array(
 			'sessionToken'		=> $this->session->data['nuvei_last_oo_details']['sessionToken'],
 			'orderId'			=> $this->session->data['nuvei_last_oo_details']['orderId'],
+            'clientUniqueId'	=> $this->session->data['order_id'] . '_' . uniqid(),
             'clientRequestId'	=> $this->session->data['nuvei_last_oo_details']['clientRequestId'],
             'currency'          => $this->order_info['currency_code'],
             'amount'            => $amount,
