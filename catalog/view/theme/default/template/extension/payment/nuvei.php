@@ -114,6 +114,11 @@
             }
             
             if(resp.result == 'DECLINED') {
+                if (resp.hasOwnProperty('errorDescription') && 'Insufficient funds' == resp.errorDescription) {
+                    scFormFalse("<?= $this->language->get('error_insuff_funds'); ?>");
+                    return
+                }
+                
                 scFormFalse("<?= $this->language->get('nuvei_order_declined'); ?>");
                 return;
             }
@@ -183,6 +188,17 @@
 	function scFormFalse(_errorMsg) {
 		$('#sc_pm_error').find('span').html(_errorMsg);
 		$('#sc_pm_error').removeClass('hide');
+        
+        // scroll to element
+        var elementt = document.getElementById('nuvei_submit');
+        var headerOffset = 45;
+        var elementPosition = elementt.getBoundingClientRect().top;
+        var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+        });
 
 //		document.getElementById('sc_payment_method_' + selectedPM).scrollIntoView();
 		
