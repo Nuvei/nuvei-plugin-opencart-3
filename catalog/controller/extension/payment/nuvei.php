@@ -3,12 +3,22 @@
 require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR . 'nuvei' 
     . DIRECTORY_SEPARATOR . 'NUVEI_CLASS.php';
 
+/**
+ * Recurring Order statuses:
+ * 1 - Active,
+ * 2 - Inactive,
+ * 3 - Cancelled,
+ * 4 - Suspended,
+ * 5 - Expired,
+ * 6 - Pending
+ */
 class ControllerExtensionPaymentNuvei extends Controller
 {
     private $is_user_logged;
 	private $order_info;
     private $plugin_settings    = [];
     private $order_addresses    = [];
+    private $new_order_status   = 0;
     
 	public function index()
     {
@@ -53,13 +63,12 @@ class ControllerExtensionPaymentNuvei extends Controller
             $pm_black_list = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'block_pms'];
         }
         
-        $items_with_plan_data   = []; //@$this->check_for_product_with_plan(); // TODO
-        $use_upos               = $save_pm = (bool) $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_upos'];
+        $use_upos = $save_pm = (bool) $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_upos'];
         
         if(0 == $this->is_user_logged) {
             $use_upos = $save_pm = false;
         }
-        elseif(!empty($items_with_plan_data['item_with_plan'])) {
+        elseif($this->cart->hasRecurringProducts()) {
             $save_pm = 'always';
         }
         
@@ -103,15 +112,11 @@ class ControllerExtensionPaymentNuvei extends Controller
             $data['nuvei_sdk_params']['webSdkEnv'] = 'dev';
         }
         
-        // TODO check for product with a plan
-        // if there are product with plan:
-        // $data['nuvei_sdk_params']['pmWhitelist'][] = 'cc_card';
-//         unset($data['nuvei_sdk_params']['pmBlacklist']);
-        // /TODO check for product with a plan
-        
-        // TODO blocked_cards
-        
-//        NUVEI_CLASS::create_log($this->plugin_settings, $data, 'SDK parameters');
+        // check for product with a plan
+        if($this->cart->hasRecurringProducts()) {
+            $data['nuvei_sdk_params']['pmWhitelist'][] = 'cc_card';
+            unset($data['nuvei_sdk_params']['pmBlacklist']);
+        }
         
         // load common php template and then pass it to the real template
         // as single variable. The form is same for both versions
@@ -216,80 +221,42 @@ class ControllerExtensionPaymentNuvei extends Controller
 //        }
         ### Manual stop DMN END
         
-        $order_id               = 0;
+        if(!$this->validate_dmn()) {
+            $this->return_message('DMN report: You receive DMN from not trusted source. The process ends here.');
+        }
+        
         $trans_type             = NUVEI_CLASS::get_param('transactionType', FILTER_SANITIZE_STRING);
         $trans_id               = (int) NUVEI_CLASS::get_param('TransactionID');
         $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
-        $merchant_unique_id     = NUVEI_CLASS::get_param('merchant_unique_id');
+        $dmnType                = NUVEI_CLASS::get_param('dmnType');
+        $client_request_id      = NUVEI_CLASS::get_param('clientRequestId');
         $req_status             = $this->get_request_status();
 		
-		if(!$trans_type) {
-            $this->return_message('DMN report: Transaction Type is empty');
-		}
+        // check for Subscription State DMN
+        $this->process_subs_state();
         
         if(empty($req_status)) {
             $this->return_message('DMN report: the Status parameter is empty.');
+		}
+        
+        if (empty($trans_id)) {
+            $this->return_message('DMN error - The TransactionID is empty!');
+		}
+        
+        // check for Subscription Payment DMN
+        $this->process_subs_payment();
+        
+        if(!$trans_type) {
+            $this->return_message('DMN report: Transaction Type is empty');
 		}
 		
 		if('pending' == strtolower($req_status)) {
             $this->return_message('DMN status is Pending. Wait for another status.');
 		}
 		
-        if(!$this->checkAdvancedCheckSum()) {
-            $this->return_message('DMN report: You receive DMN from not trusted source. The process ends here.');
-        }
+        $this->get_order_info_by_dmn();
         
-        // find Order ID
-        if(!empty($_REQUEST['order_id'])) {
-			$order_id = (int) $_REQUEST['order_id'];
-		}
-        elseif(!empty($merchant_unique_id) && false === strpos($merchant_unique_id, 'gwp_')) {
-            if(is_numeric($merchant_unique_id)) {
-                $order_id = (int) $merchant_unique_id;
-            }
-            // beacause of the modified merchant_unique_id - PayPal problem
-            elseif(strpos($merchant_unique_id, '_') !== false) {
-                $order_id_arr = explode('_', $merchant_unique_id);
-                
-                if(is_numeric($order_id_arr[0])) {
-                    $order_id = (int) $order_id_arr[0];
-                }
-            }
-        }
-		else {
-			$q = 'SELECT order_id FROM ' . DB_PREFIX . 'order '
-                . 'WHERE custom_field = ' . $relatedTransactionId;
-			
-			$query = $this->db->query($q);
-            
-            NUVEI_CLASS::create_log($this->plugin_settings, @$query->row);
-            $order_id   = (int) $query->row['order_id'];
-		}
-        
-        if($order_id == 0 || !is_numeric($order_id)) {
-            $this->return_message('DMN error - invalid Order ID.');
-        }
-        
-        // get Order info
-        try {
-            $this->order_info = $this->model_checkout_order->getOrder($order_id);
-            
-            if(!$this->order_info || empty($this->order_info)) {
-                http_response_code(400);
-                $this->return_message('DMN error - there is no order info.');
-            }
-            
-            // check for Nuvei Order
-            if($this->order_info['payment_code'] != 'nuvei') {
-                $this->return_message('DMN error - the Order does not belongs to the Nuvei.');
-            }
-        }
-        catch (Exception $ex) {
-            NUVEI_CLASS::create_log($this->plugin_settings, $ex->getMessage(), 'Exception', 'WARN');
-            
-            http_response_code(400);
-            $this->return_message('DMN Exception', $ex->getMessage());
-        }
+        $order_id = $this->order_info['order_id'];
         
         // do not override Order status
         if($this->order_info['order_status_id'] > 0
@@ -300,76 +267,22 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         
         # in Case of CPanel Refund DMN
-        if(in_array($trans_type, array('Credit', 'Refund'))
-            && strpos(NUVEI_CLASS::get_param('clientUniqueId'), 'gwp_') !== false
-        ) {
-            $this->model_checkout_order->addOrderHistory(
-                $order_id,
-                $this->order_info['order_status_id'],
-                $this->language->get('CPanel Refund detected. Please, create a manual refund!'),
-                false
-            );
-
-            $this->return_message('DMN received.');
-        }
+//        if(in_array($trans_type, array('Credit', 'Refund'))
+//            && strpos(NUVEI_CLASS::get_param('clientUniqueId'), 'gwp_') !== false
+//        ) {
+//            $this->model_checkout_order->addOrderHistory(
+//                $order_id,
+//                $this->order_info['order_status_id'],
+//                $this->language->get('CPanel Refund detected. Please, create a manual refund!'),
+//                false
+//            );
+//
+//            $this->return_message('DMN received.');
+//        }
         # in Case of CPanel Refund DMN END
         
-        # add new data into payment_custom_field
-        $order_data = $this->order_info['payment_custom_field'];
+        $this->new_order_status = $this->order_info['order_status_id'];
         
-        NUVEI_CLASS::create_log($this->plugin_settings, $order_data, 'callback() payment_custom_field');
-        
-        if(empty($order_data)) {
-            $order_data = array();
-        }
-        // prevent dublicate data
-        else {
-            foreach($order_data as $trans) {
-                if($trans['transactionId'] == $trans_id
-                    && $trans['transactionType'] == $trans_type
-                    && $trans['status'] == strtolower($req_status)
-                ) {
-                    NUVEI_CLASS::create_log(
-                        $this->plugin_settings, 
-                        'Dublicate DMN. We already have this information. Stop here.'
-                    );
-                    
-                    $this->return_message('Dublicate DMN. We already have this information. Stop here.');
-                }
-            }
-        }
-        
-        $order_data[] = array(
-            'status'                => strtolower((string) $req_status),
-            'clientUniqueId'        => NUVEI_CLASS::get_param('clientUniqueId', FILTER_SANITIZE_STRING),
-            'transactionType'       => $trans_type,
-            'transactionId'         => $trans_id,
-            'relatedTransactionId'  => $relatedTransactionId,
-            'userPaymentOptionId'   => (int) NUVEI_CLASS::get_param('userPaymentOptionId'),
-            'authCode'              => (int) NUVEI_CLASS::get_param('AuthCode'),
-            'totalAmount'           => round((float) NUVEI_CLASS::get_param('totalAmount'), 2),
-            'currency'              => NUVEI_CLASS::get_param('currency', FILTER_SANITIZE_STRING),
-            'paymentMethod'         => NUVEI_CLASS::get_param('payment_method', FILTER_SANITIZE_STRING),
-            'responseTimeStamp'     => NUVEI_CLASS::get_param('responseTimeStamp', FILTER_SANITIZE_STRING),
-        );
-        
-        // all data
-        $this->db->query(
-            "UPDATE `" . DB_PREFIX . "order` "
-            . "SET payment_custom_field = '" . json_encode($order_data) . "' "
-            . "WHERE order_id = " . $order_id
-        );
-        
-        // add only transaction ID if the transactions is Auth, Settle or Sale
-        if(in_array($trans_type, array('Auth', 'Settle', 'Sale'))) {
-            $this->db->query(
-                "UPDATE `" . DB_PREFIX . "order` "
-                . "SET custom_field = '" . $trans_id . "' "
-                . "WHERE order_id = " . $order_id
-            );
-        }
-        # add new data into payment_custom_field END
-		
         # Sale and Auth
         if(in_array($trans_type, array('Sale', 'Auth'))) {
             NUVEI_CLASS::create_log(
@@ -388,18 +301,32 @@ class ControllerExtensionPaymentNuvei extends Controller
 				$this->change_order_status($order_id, $req_status, $trans_type);
 			}
             
+            $this->update_custom_fields($order_id);
+            $this->subscription_start($trans_type, $order_id);
             $this->return_message('DMN received.');
         }
         
         # Refund
         if(in_array($trans_type, array('Credit', 'Refund'))) {
+            $this->update_custom_fields($order_id);
             $this->change_order_status($order_id, $req_status, 'Credit');
             $this->return_message('DMN received.');
         }
         
         # Void, Settle
         if(in_array($trans_type, array('Void', 'Settle'))) {
+            $this->update_custom_fields($order_id);
             $this->change_order_status($order_id, $req_status, $trans_type);
+            
+            if ('Settle' == $trans_type) {
+                NUVEI_CLASS::create_log($this->plugin_settings, 'DMN Settle');
+                $this->subscription_start($trans_type, $order_id);
+            }
+            else {
+                NUVEI_CLASS::create_log($this->plugin_settings, 'DMN Void');
+                $this->subscription_cancel($trans_type, $order_id);
+            }
+            
 			$this->return_message('DMN received.');
         }
         
@@ -420,18 +347,14 @@ class ControllerExtensionPaymentNuvei extends Controller
         NUVEI_CLASS::create_log($this->plugin_settings, @$_POST, 'process_payment()');
         
         $this->session->data['nuvei_last_oo_details'] = [];
-		$this->order_info = $this->model_checkout_order->getOrder($this->request->get['order_id']);
 		
-		$success_url    = $this->url->link(NUVEI_CONTROLLER_PATH . '/success') 
+        $this->order_info   = $this->model_checkout_order->getOrder($this->request->get['order_id']);
+		
+		$success_url        = $this->url->link(NUVEI_CONTROLLER_PATH . '/success') 
             . '&order_id=' . $this->request->get['order_id'];
 		
-//        $pending_url    = $success_url;
-		
-        $error_url      = $this->url->link(NUVEI_CONTROLLER_PATH . '/fail') 
+        $error_url          = $this->url->link(NUVEI_CONTROLLER_PATH . '/fail') 
             . '&order_id=' . $this->request->get['order_id'];
-		
-//        $back_url       = $this->url->link('checkout/checkout', '', true);
-//        $notify_url     = $this->url->link(NUVEI_CONTROLLER_PATH . '/callback');
 		
 		if(!empty($this->request->post['sc_transaction_id'])
             && is_numeric($this->request->post['sc_transaction_id'])
@@ -440,214 +363,81 @@ class ControllerExtensionPaymentNuvei extends Controller
 		}
         
         $this->response->redirect($error_url);
-		
-        /*
-		# APMs
-        $this->language->load(NUVEI_CONTROLLER_PATH);
-        $data['process_payment'] = $this->language->get('Processing the payment. Please, wait!');
-        
-        $TimeStamp = date('YmdHis', time());
-		
-		$total_amount = $this->currency->format(
-            $this->order_info['total'],
-            $this->order_info['currency_code'],
-            $this->order_info['currency_value'],
-            false
-        );
-        
-        if($total_amount < 0) {
-            $total_amount = number_format(0, 2, '.', '');
-        }
-        else {
-            $total_amount = number_format($total_amount, 2, '.', '');
-        }
-		
-		$countriesWithStates = array('US', 'IN', 'CA');
-		
-		$state = preg_replace("/[[:punct:]]/", '', substr($this->order_info['payment_zone'], 0, 2));
-		if (in_array($this->order_info['payment_iso_code_2'], $countriesWithStates)) {
-			$state = $this->order_info['payment_zone_code'];
-		}
-        
-		$params = array(
-			'merchantId'        => $this->config->get(NUVEI_SETTINGS_PREFIX . 'merchantId'),
-			'merchantSiteId'    => $this->config->get(NUVEI_SETTINGS_PREFIX . 'merchantSiteId'),
-			'clientUniqueId'    => $this->request->get['order_id'] . '_' . uniqid(),
-			'merchant_unique_id'=> $this->request->get['order_id'],
-			'clientRequestId'   => $TimeStamp . '_' . uniqid(),
-			'currency'          => $this->order_info['currency_code'],
-			'amount'            => (string) $total_amount,
-			'amountDetails'     => array(
-				'totalShipping'     => '0.00',
-				'totalHandling'     => '0.00',
-				'totalDiscount'     => '0.00',
-				'totalTax'          => '0.00',
-			),
-			'userDetails'       => array(
-				'firstName'         => preg_replace("/[[:punct:]]/", '', $this->order_info['payment_firstname']),
-				'lastName'          => preg_replace("/[[:punct:]]/", '', $this->order_info['payment_lastname']),
-				'address'           => preg_replace("/[[:punct:]]/", '', $this->order_info['payment_address_1']),
-				'phone'             => preg_replace("/[[:punct:]]/", '', $this->order_info['telephone']),
-				'zip'               => preg_replace("/[[:punct:]]/", '', $this->order_info['payment_postcode']),
-				'city'              => preg_replace("/[[:punct:]]/", '', $this->order_info['payment_city']),
-				'country'           => $this->order_info['payment_iso_code_2'],
-				'state'             => $state,
-				'email'             => $this->order_info['email'],
-				'county'            => '',
-			),
-			'shippingAddress'   => array(
-				'firstName'         => preg_replace("/[[:punct:]]/", '', $this->order_info['shipping_firstname']),
-				'lastName'          => preg_replace("/[[:punct:]]/", '', $this->order_info['shipping_lastname']),
-				'address'           => preg_replace("/[[:punct:]]/", '', $this->order_info['shipping_address_1']),
-				'cell'              => '',
-				'phone'             => preg_replace("/[[:punct:]]/", '', $this->order_info['telephone']),
-				'zip'               => preg_replace("/[[:punct:]]/", '', $this->order_info['shipping_postcode']),
-				'city'              => preg_replace("/[[:punct:]]/", '', $this->order_info['shipping_city']),
-				'country'           => preg_replace("/[[:punct:]]/", '', $this->order_info['shipping_iso_code_2']),
-				'state'             => '',
-				'email'             => $this->order_info['email'],
-				'shippingCounty'    => '',
-			),
-			'urlDetails'        => array(
-				'successUrl'        => $success_url,
-				'failureUrl'        => $error_url,
-				'pendingUrl'        => $pending_url,
-				'backUrl'			=> $back_url,
-				'notificationUrl'   => $notify_url,
-			),
-			'timeStamp'			=> $TimeStamp,
-			'webMasterID'       => 'OpenCart ' . VERSION,
-			'sessionToken'      => isset($this->request->post['lst']) ? $this->request->post['lst'] : '',
-			'deviceDetails'     => NUVEI_CLASS::get_device_details(),
-		);
-
-		$params['billingAddress'] = $params['userDetails'];
-		
-		$params['items'][0] = array(
-			'name'		=> $this->request->get['order_id'],
-			'price'		=> $total_amount,
-			'quantity'	=> 1,
-		);
-        
-        if(!empty($this->request->post['nuvei_save_upo']) && 1 == $this->request->post['nuvei_save_upo']) {
-            $params['userTokenId'] = $this->order_info['email'];
-        }
-
-		$params['checksum'] = hash(
-			$this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'),
-			$params['merchantId'] 
-                . $params['merchantSiteId'] 
-                . $params['clientRequestId']
-				. $params['amount'] 
-                . $params['currency'] 
-                . $TimeStamp
-				. $this->config->get(NUVEI_SETTINGS_PREFIX . 'secret')
-		);
-
-        //$params['paymentMethod'] = $this->request->post['payment_method_sc'];
-        $sc_payment_method = $this->request->post['payment_method_sc'];
-		
-		// UPO
-		if (is_numeric($sc_payment_method)) {
-			$endpoint_method                                = 'payment';
-			$params['paymentOption']['userPaymentOptionId'] = $sc_payment_method;
-			$params['userTokenId']							= $this->order_info['email'];
-		}
-        // APM
-        else {
-			$endpoint_method         = 'paymentAPM';
-			$params['paymentMethod'] = $sc_payment_method;
-			
-			if (!empty($this->request->post[$sc_payment_method])) {
-				$params['userAccountDetails'] = $this->request->post[$sc_payment_method];
-			}
-			
-			if (
-                isset($this->request->get['nuvei_save_upo']) == 1
-                && $this->request->get['nuvei_save_upo'] == 1
-            ) {
-				$params['userTokenId'] = $this->order_info['email'];
-			}
-		}
-        
-//		if(
-//			isset($this->request->post['payment_method_sc'], $this->request->post[$this->request->post['payment_method_sc']])
-//			&& is_array($this->request->post[$this->request->post['payment_method_sc']])
-//		) {
-//			$params['userAccountDetails'] = $this->request->post[$this->request->post['payment_method_sc']];
-//		}
-            
-//		$resp = NUVEI_CLASS::call_rest_api('paymentAPM', $params);
-		$resp = NUVEI_CLASS::call_rest_api($endpoint_method, $params);
-
-		if(!$resp) {
-			$this->response->redirect($this->request->post['error_url']);
-		}
-
-		if($this->get_request_status($resp) == 'ERROR' || @$resp['transactionStatus'] == 'ERROR') {
-			$this->change_order_status(
-				(int) $this->request->get['order_id'], 
-				'ERROR', 
-				@$resp['transactionType']
-			);
-
-			$this->response->redirect($error_url);
-		}
-
-		if(@$resp['transactionStatus'] == 'DECLINED') {
-			$this->change_order_status(
-				(int) $this->request->get['order_id'], 
-				'DECLINED', 
-				@$resp['transactionType']
-			);
-
-            if(!empty($this->request->post['error_url'])) {
-                $this->response->redirect($this->request->post['error_url']);
-            }
-            else {
-                $this->response->redirect($error_url);
-            }
-		}
-
-		if($this->get_request_status($resp) == 'SUCCESS') {
-			// in case we have redirectURL
-			if(!empty($resp['redirectURL'])) {
-				$this->response->redirect($resp['redirectURL']);
-			}
-            elseif(!empty($resp['paymentOption']['redirectUrl'])) {
-                $this->response->redirect($resp['paymentOption']['redirectUrl']);
-            }
-		}
-
-		$this->response->redirect($success_url);
-         * 
-         */
     }
 	
     /**
-     * Function checkAdvancedCheckSum
+     * Function validate_dmn
      * Check if the DMN is not fake.
      * 
      * @return boolean
      */
-    private function checkAdvancedCheckSum()
+    private function validate_dmn()
     {
-        $str = hash(
-            $this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'),
-            $this->config->get(NUVEI_SETTINGS_PREFIX . 'secret')
-                . NUVEI_CLASS::get_param('totalAmount')
-                . NUVEI_CLASS::get_param('currency')
-                . NUVEI_CLASS::get_param('responseTimeStamp')
-                . NUVEI_CLASS::get_param('PPP_TransactionID')
-                . $this->get_request_status()
-                . NUVEI_CLASS::get_param('productId')
-        );
+        $advanceResponseChecksum = NUVEI_CLASS::get_param('advanceResponseChecksum');
+		$responsechecksum        = NUVEI_CLASS::get_param('responsechecksum');
+		
+		if (empty($advanceResponseChecksum) && empty($responsechecksum)) {
+            NUVEI_CLASS::create_log(
+                $this->plugin_settings,
+                'advanceResponseChecksum and responsechecksum parameters are empty.',
+                '',
+                'CRITICAL'
+            );
+			return false;
+		}
+		
+		// advanceResponseChecksum case
+		if (!empty($advanceResponseChecksum)) {
+            $str = hash(
+                $this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'),
+                $this->config->get(NUVEI_SETTINGS_PREFIX . 'secret')
+                    . NUVEI_CLASS::get_param('totalAmount')
+                    . NUVEI_CLASS::get_param('currency')
+                    . NUVEI_CLASS::get_param('responseTimeStamp')
+                    . NUVEI_CLASS::get_param('PPP_TransactionID')
+                    . $this->get_request_status()
+                    . NUVEI_CLASS::get_param('productId')
+            );
 
-        if (NUVEI_CLASS::get_param('advanceResponseChecksum') == $str) {
-            return true;
-        }
-        
-        return false;
+            if (NUVEI_CLASS::get_param('advanceResponseChecksum') == $str) {
+                return true;
+            }
+
+            NUVEI_CLASS::create_log(
+                $this->plugin_settings,
+                'advanceResponseChecksum validation fail.',
+                '',
+                'WARN'
+            );
+            return false;
+		}
+		
+		# subscription DMN with responsechecksum case
+		$concat        = '';
+		$request_arr   = $_REQUEST;
+		$custom_params = array(
+			'route'             => '',
+			'responsechecksum'  => '',
+		);
+		
+		// remove parameters not part of the checksum
+		$dmn_params = array_diff_key($request_arr, $custom_params);
+		$concat     = implode('', $dmn_params);
+		
+		$concat_final = $concat . $this->config->get(NUVEI_SETTINGS_PREFIX . 'secret');
+		$checksum     = hash($this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'), $concat_final);
+		
+		if ($responsechecksum !== $checksum) {
+            NUVEI_CLASS::create_log(
+                $this->plugin_settings,
+                'responsechecksum validation fail.',
+                '',
+                'WARN'
+            );
+			return false;
+		}
+		
+		return true;
 	}
     
     /**
@@ -748,73 +538,19 @@ class ControllerExtensionPaymentNuvei extends Controller
                 
                 // Refund
                 if($transactionType == 'Credit') {
-//					$curr_refund_amount = $total_amount;
-					
-//                        // get all order Refunds
-//                        $query = $this->db->query('SELECT * FROM nuvei_refunds WHERE orderId = ' . $order_id);
-//
-//                        $refs_sum = 0;
-//                        if(@$query->rows) {
-//							NUVEI_CLASS::create_log($this->plugin_settings, $query->rows, 'Refunds:');
-//							
-//                            foreach($query->rows as $row) {
-//                                $row_amount = round(floatval($row['amount']), 2);
-//                                
-//                                if($row['approved'] == 1) {
-//                                    $refs_sum += $row_amount;
-//                                }
-//                                // find the record for the current Refund
-//                                // and check the Amount, the amount in the base is correct one
-//                                elseif(
-//                                    $row['clientUniqueId'] == $cl_unique_id
-//                                    && round($curr_refund_amount, 2) != $row_amount
-//                                ) {
-//                                    $curr_refund_amount = $row_amount;
-//                                }
-//                            }
-//                        }
-                        
-                        // to the sum of approved refund add current Refund amount
-						/** TODO because of bug, only cc_card provide correct Refund Amount */
-//						if('cc_card' == $payment_method) {
-//							$refs_sum += $curr_refund_amount;
-//						}
+                    $send_message   = false;
+                    $status_id      = $this->config->get(NUVEI_SETTINGS_PREFIX . 'refunded_status_id');
 
-                        $send_message   = false;
-                        $status_id      = $this->config->get(NUVEI_SETTINGS_PREFIX . 'refunded_status_id');
+                    $message = $this->language->get('Your Order was Refunded.') . $comment_details;
 
-//                        if(round($refs_sum, 2) == round($this->order_info['total'], 2)) {
-//                            $status_id = 11; // Refunded
-//                            $send_message = true;
-//
-//                            $this->db->query("UPDATE " . DB_PREFIX
-//                                . "order SET order_status_id = 11 WHERE order_id = {$order_id};");
-//                        }
-                        
-                        $message = $this->language->get('Your Order was Refunded.') . $comment_details;
-						
-						//if($cl_unique_id) {
-							$formated_refund = $this->currency->format(
-//								$curr_refund_amount,
-								$total_amount,
-								$this->order_info['currency_code'],
-								1 // because we pass converted amount, else - $this->order_info['currency_value']
-							);
-							
-							$message .= $this->language->get('Refund Amount: ') . $formated_refund;
-						//}
-						
-                        # update Refund data into the DB
-//						$q = "UPDATE nuvei_refunds SET "
-//							. "transactionId = '{$this->db->escape(@$_REQUEST['TransactionID'])}', "
-//							. "authCode = '{$this->db->escape(@$_REQUEST['AuthCode'])}', "
-//							. "approved = 1 "
-//						. "WHERE orderId = {$order_id} "
-//							. "AND clientUniqueId = '{$this->db->escape($cl_unique_id)}'";
-//                        
-//						NUVEI_CLASS::create_log($this->plugin_settings, $q, 'Refunds update query:');
-//							
-//                        $this->db->query($q);
+                    $formated_refund = $this->currency->format(
+                        $total_amount,
+                        $this->order_info['currency_code'],
+                        1 // because we pass converted amount, else - $this->order_info['currency_value']
+                    );
+
+                    $message .= $this->language->get('Refund Amount: ') . $formated_refund;
+                    
                     break;
                 }
                 
@@ -904,36 +640,6 @@ class ControllerExtensionPaymentNuvei extends Controller
                 $status_id = $this->config->get(NUVEI_SETTINGS_PREFIX . 'failed_status_id');
                 break;
 
-			/** TODO Remove it. We stop process in the beginning when status is Pending */
-//            case 'PENDING':
-//				NUVEI_CLASS::create_log($this->plugin_settings, $this->order_info['order_status_id'], 'Order status is:', $this->config->get(NUVEI_SETTINGS_PREFIX . 'test_mode'));
-//				
-//                if ($this->order_info['order_status_id'] == '5' || $this->order_info['order_status_id'] == '15') {
-//                    $status_id = $this->order_info['order_status_id'];
-//                    break;
-//                }
-//				
-//				$status_id = $this->config->get(NUVEI_SETTINGS_PREFIX . 'pending_status_id');
-//                
-//                $message = 'Payment is still pending, PPP_TransactionID '
-//                    . @$request['PPP_TransactionID'] . ", Status = " . $status;
-//
-//                if($transactionType) {
-//                    $message .= ", TransactionType = " . $transactionType;
-//                }
-//
-//                $message .= ', GW_TransactionID = ' . @$request['TransactionID'];
-//                
-//                $this->model_checkout_order->addOrderHistory(
-//                    $order_id,
-//                    $status_id,
-//                    'Nuvei payment status is pending<br/>Unique Id: '
-//                        .@$request['PPP_TransactionID'],
-//                    true
-//                );
-//                
-//                break;
-                
             default:
                 NUVEI_CLASS::create_log($this->plugin_settings, $status, 'Unexisting status:');
         }
@@ -948,6 +654,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         );
         
         $this->model_checkout_order->addOrderHistory($order_id, $status_id, $message, $send_message);
+        
+        $this->new_order_status = $status_id;
     }
     
 	private function open_order()
@@ -966,6 +674,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         
 		$oo_params = array(
 			'clientUniqueId'	=> $this->session->data['order_id'] . '_' . uniqid(),
+            'clientRequestId'   => date('YmdHis', time()) . '_' . uniqid(),
 			'amount'            => $amount,
 			'currency'          => $this->order_info['currency_code'],
 			
@@ -981,7 +690,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 			'billingAddress'	=> $this->order_addresses['billingAddress'],
             'shippingAddress'   => $this->order_addresses['shippingAddress'],
 			
-			'paymentOption'		=> array('card' => array('threeD' => array('isDynamic3D' => 1))),
+//			'paymentOption'		=> array('card' => array('threeD' => array('isDynamic3D' => 1))),
 			'transactionType'	=> $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action'],
 		);
 		
@@ -996,7 +705,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         # use or not UPOs
         // rebiling parameters
-        $rebilling_params = $this->preprareRebillingParams();
+        $rebilling_params = $this->preprare_rebilling_params();
 
         // in case there is a Product with a Payment Plan
         if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
@@ -1008,6 +717,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
         }
         # /use or not UPOs
+        
+        $oo_params = array_merge_recursive($oo_params, $rebilling_params);
         
 		$resp = NUVEI_CLASS::call_rest_api(
             'openOrder',
@@ -1079,7 +790,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 		);
 
         // rebiling parameters
-        $rebilling_params = $this->preprareRebillingParams();
+        $rebilling_params = $this->preprare_rebilling_params();
         // when will use UPOs
         if(0 == $rebilling_params['isRebilling']) {
             $params['userTokenId'] = $this->order_addresses['billingAddress']['email'];
@@ -1170,6 +881,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 		exit;
 	}
 	
+    /*
     private function remove_upo()
     {
         if(empty($this->customer->getEmail())) {
@@ -1212,6 +924,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 		echo json_encode(array('status' => 1));
 		exit;
     }
+     */
 
     /**
      * Function return_message
@@ -1231,29 +944,43 @@ class ControllerExtensionPaymentNuvei extends Controller
             NUVEI_CLASS::create_log($this->plugin_settings, $msg);
         }
         
-        echo $msg;
-        exit;
+        exit($msg);
     }
     
-    private function preprareRebillingParams()
+    private function preprare_rebilling_params()
     {
-        $params = [];
+        $params                 = [];
+        $nuvei_rebilling_data   = [];
         
         // default rebiling parameters
         $params['isRebilling']                                        = 1;
+        $params['paymentOption']['card']['threeD']['isDynamic3D']     = 1;
         $params['paymentOption']['card']['threeD']['rebillFrequency'] = 0;
         $params['paymentOption']['card']['threeD']['rebillExpiry']    = date('Ymd', time());
         
-        # TODO check for a product with a Payment Plan
-//        $prod_with_plan = $this->getProdsWithPlansFromCart();
-//        
-//        // in case there is a Product with a Payment Plan
-//        if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
-//            $params['isRebilling']                                        = 0;
-//			$params['paymentOption']['card']['threeD']['rebillFrequency'] = 1;
-//			$params['paymentOption']['card']['threeD']['rebillExpiry']    = gmdate('Ymd', strtotime('+5 years'));
-//            $params['merchantDetails']['customField5']                    = $prod_with_plan['plan_details'];
-//        }
+        # check for a product with a Payment Plan
+        $rebilling_data = $this->cart->getRecurringProducts();
+        
+        //NUVEI_CLASS::create_log($this->plugin_settings, $rebilling_data, 'Rebilling products data');
+        
+        if(count($rebilling_data) > 0) {
+            foreach($rebilling_data as $data) {
+                // check for nuvei into recurring name
+                if (strpos(strtolower($data['recurring']['name']), NUVEI_PLUGIN_CODE) === false) {
+                    continue;
+                }
+                
+                $nuvei_rebilling_data = [
+                    'product_id'    => $data['product_id'],
+                    'recurring_id'  => $data['recurring']['recurring_id'],
+                ];
+            }
+            
+            $params['isRebilling']                                        = 0;
+			$params['paymentOption']['card']['threeD']['rebillFrequency'] = 1;
+			$params['paymentOption']['card']['threeD']['rebillExpiry']    = gmdate('Ymd', strtotime('+5 years'));
+            $params['merchantDetails']['customField3']                    = json_encode($nuvei_rebilling_data);
+        }
         
         return $params;
     }
@@ -1274,4 +1001,489 @@ class ControllerExtensionPaymentNuvei extends Controller
         $new_price = round((float) $price * $this->order_info['currency_value'], 2);
         return number_format($new_price, 2, '.', '');
     }
+    
+    private function get_order_info_by_dmn()
+    {
+        $order_id               = (int) NUVEI_CLASS::get_param('order_id');
+        $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
+        $merchant_unique_id     = NUVEI_CLASS::get_param('merchant_unique_id');
+        $client_request_id      = NUVEI_CLASS::get_param('clientRequestId');
+        $cri_parts              = explode('_', $client_request_id);
+        
+        if (is_numeric($order_id) && 0 < $order_id) {
+            $this->order_info = $this->model_checkout_order->getOrder($order_id);
+        }
+        elseif (!empty($merchant_unique_id) && false === strpos($merchant_unique_id, 'gwp_')) {
+            if(is_numeric($merchant_unique_id)) {
+                $order_id = (int) $merchant_unique_id;
+            }
+            // beacause of the modified merchant_unique_id - PayPal problem
+            elseif(strpos($merchant_unique_id, '_') !== false) {
+                $order_id_arr = explode('_', $merchant_unique_id);
+                
+                if(is_numeric($order_id_arr[0])) {
+                    $order_id = (int) $order_id_arr[0];
+                }
+            }
+        }
+        elseif (!empty($cri_parts) && !empty($cri_parts[0]) && is_numeric($cri_parts[0])) {
+            $order_id = $cri_parts[0];
+        }
+        elseif (!empty($relatedTransactionId)) {
+            $query = $this->db->query(
+                'SELECT order_id FROM ' . DB_PREFIX . 'order '
+                . 'WHERE custom_field = ' . $relatedTransactionId
+            );
+            
+            $order_id = (int) @$query->row['order_id'];
+        }
+        
+        $this->order_info = $this->model_checkout_order->getOrder($order_id);
+        
+        if (!is_array($this->order_info) || empty($this->order_info)) {
+            $this->return_message('DMN error - There is no order info, invalid Order ID.');
+        }
+        
+        // check for Nuvei Order
+        if(@$this->order_info['payment_code'] != 'nuvei') {
+            $this->return_message('DMN error - the Order does not belongs to the Nuvei.');
+        }
+
+        // success
+        return;
+    }
+    
+    private function update_custom_fields($order_id)
+    {
+        $req_status             = $this->get_request_status();
+        $trans_id               = (int) NUVEI_CLASS::get_param('TransactionID');
+        $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
+        $trans_type             = NUVEI_CLASS::get_param('transactionType', FILTER_SANITIZE_STRING);
+        $order_data             = $this->order_info['payment_custom_field'];
+        
+        if(empty($order_data)) {
+            $order_data = array();
+        }
+        
+        NUVEI_CLASS::create_log($this->plugin_settings, $order_data, 'callback() payment_custom_field');
+        
+        // prevent dublicate data
+        foreach($order_data as $trans) {
+            if($trans['transactionId'] == $trans_id
+                && $trans['transactionType'] == $trans_type
+                && $trans['status'] == strtolower($req_status)
+            ) {
+                NUVEI_CLASS::create_log(
+                    $this->plugin_settings, 
+                    'Dublicate DMN. We already have this information. Stop here.'
+                );
+
+                $this->return_message('Dublicate DMN. We already have this information. Stop here.');
+            }
+        }
+        
+        $order_data[] = array(
+            'status'                => strtolower((string) $req_status),
+            'clientUniqueId'        => NUVEI_CLASS::get_param('clientUniqueId', FILTER_SANITIZE_STRING),
+            'transactionType'       => $trans_type,
+            'transactionId'         => $trans_id,
+            'relatedTransactionId'  => $relatedTransactionId,
+            'userPaymentOptionId'   => (int) NUVEI_CLASS::get_param('userPaymentOptionId'),
+            'authCode'              => (int) NUVEI_CLASS::get_param('AuthCode'),
+            'totalAmount'           => round((float) NUVEI_CLASS::get_param('totalAmount'), 2),
+            'currency'              => NUVEI_CLASS::get_param('currency', FILTER_SANITIZE_STRING),
+            'paymentMethod'         => NUVEI_CLASS::get_param('payment_method', FILTER_SANITIZE_STRING),
+            'responseTimeStamp'     => NUVEI_CLASS::get_param('responseTimeStamp', FILTER_SANITIZE_STRING),
+        );
+        
+        // all data
+        $this->db->query(
+            "UPDATE `" . DB_PREFIX . "order` "
+            . "SET payment_custom_field = '" . json_encode($order_data) . "' "
+            . "WHERE order_id = " . $order_id
+        );
+        
+        // add only transaction ID if the transactions is Auth, Settle or Sale
+        if(in_array($trans_type, array('Auth', 'Settle', 'Sale'))) {
+            $this->db->query(
+                "UPDATE `" . DB_PREFIX . "order` "
+                . "SET custom_field = '" . $trans_id . "' "
+                . "WHERE order_id = " . $order_id
+            );
+        }
+    }
+    
+    /**
+	 * The start of create subscriptions logic.
+	 * We call this method when we've got Settle or Sale DMNs.
+	 * 
+	 * @param string    $transactionType
+	 * @param int       $order_id
+	 */
+    private function subscription_start($transactionType, $order_id)
+    {
+        NUVEI_CLASS::create_log(
+            $this->plugin_settings,
+            [
+                'status'        => $this->new_order_status,
+                //'order info'    => $this->order_info,
+            ],
+            'subscription_start()'
+        );
+        
+        $subscr_data = json_decode(NUVEI_CLASS::get_param('customField3'), true);
+        
+		if (!in_array($transactionType, array('Settle', 'Sale', 'Auth'))
+            || 'APPROVED' != $this->get_request_status()
+            || !is_array($subscr_data)
+            || empty($subscr_data['product_id'])
+            || empty($subscr_data['recurring_id'])
+        ) {
+            NUVEI_CLASS::create_log($this->plugin_settings, 'subscription_start() first check fail.');
+			return;
+		}
+        
+        // allow recurring only for Zero Auth Orders
+        if('Auth' == $transactionType && 0 !== (int) NUVEI_CLASS::get_param('totalAmount')) {
+            NUVEI_CLASS::create_log($this->plugin_settings, 'The Auth Order total is not Zero. Do not start Rebilling');
+            return;
+        }
+        
+        // get recurring data
+        $prod_plan = $this->db->query(
+            'SELECT * FROM ' . DB_PREFIX . 'recurring '
+            . 'WHERE recurring_id = ' . (int) $subscr_data['recurring_id']
+        );
+		
+		if (!is_object($prod_plan) || empty($prod_plan)) {
+            NUVEI_CLASS::create_log($this->plugin_settings, $prod_plan, 'Error - $prod_plan problem.');
+			return;
+		}
+        
+        // check for more than one products of same type
+        $order_products = $this->db->query(
+            'SELECT product_id, name, quantity, total '
+            . 'FROM ' . DB_PREFIX . 'order_product '
+            . 'WHERE order_id = ' . (int) $order_id
+        );
+        
+        if (!is_object($order_products) || empty($order_products->row['quantity'])) {
+            NUVEI_CLASS::create_log($this->plugin_settings, $order_products, 'Error - $order_products problem.');
+			return;
+		}
+        
+        $qty                = $order_products->row['quantity'];
+        $recurringAmount    = round($prod_plan->row['price'] * $this->order_info['currency_value'], 2);
+        // this is the only place to pass the Order ID, we will need it later, to identify the Order
+		$clientRequestId    = $order_id . '_' . uniqid();
+        
+        // get Recurring Name and Description
+        $rec_descr = $this->db->query(
+            'SELECT name '
+            . 'FROM ' . DB_PREFIX . 'recurring_description '
+            . 'WHERE recurring_id = ' . (int) $prod_plan->row['recurring_id'] . ' '
+                . 'AND language_id = ' . (int) $this->config->get('config_language_id')
+        );
+        
+        if (!is_object($rec_descr) || empty($rec_descr->row['name'])) {
+            NUVEI_CLASS::create_log($this->plugin_settings, $rec_descr, 'Error - $rec_descr problem.');
+			return;
+		}
+        
+        $rec_name = $rec_descr->row['name'];
+        
+        // save the Order in Recurring Orders section
+        $query = 'INSERT INTO ' . DB_PREFIX . 'order_recurring '
+            . '(`order_id`, `reference`, `product_id`, `product_name`, `product_quantity`, `recurring_id`, `recurring_name`, `recurring_description`, `recurring_frequency`, `recurring_cycle`, `recurring_duration`, `recurring_price`, `trial`, `trial_frequency`, `trial_cycle`, `trial_duration`, `trial_price`, `status`, `date_added`) '
+            . 'VALUES ('. $this->order_info['order_id'] .', '. (int) NUVEI_CLASS::get_param('TransactionID') .', '. $order_products->row['product_id'] .', "'. $order_products->row['name'] .'", '. $qty .', '. $prod_plan->row['recurring_id'] .', "'. $rec_name .'", "'. $rec_name .'", "'. $prod_plan->row['frequency'] .'", '. $prod_plan->row['cycle'] .', '. $prod_plan->row['duration'] .', '. $recurringAmount .', '. $prod_plan->row['trial_status'] .', "'. $prod_plan->row['trial_frequency'] .'", '. $prod_plan->row['trial_cycle'] .', '. $prod_plan->row['trial_duration'] .', '. $prod_plan->row['trial_price'] .', 6, NOW())';
+        
+        //NUVEI_CLASS::create_log($this->plugin_settings, $query, 'insert query');
+        
+        $this->db->query($query);
+        
+        // try to start rebillings
+        for ($qty; $qty > 0; $qty--) {
+            $params = array(
+                'clientRequestId'       => $clientRequestId,
+                'userPaymentOptionId'   => (int) NUVEI_CLASS::get_param('userPaymentOptionId'),
+                'userTokenId'           => NUVEI_CLASS::get_param('user_token_id'),
+                'currency'              => NUVEI_CLASS::get_param('currency'),
+                'initialAmount'         => 0,
+                'planId'            => @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'plan_id'],
+                'recurringAmount'   => $recurringAmount,
+                'recurringPeriod'   => [
+                    $prod_plan->row['frequency'] => $prod_plan->row['cycle'],
+                ],
+                'startAfter'        => [
+                    $prod_plan->row['trial_frequency'] => $prod_plan->row['trial_duration']
+                ],
+                'endAfter'          => [
+                    $prod_plan->row['frequency'] => $prod_plan->row['duration'],
+                ],
+            );
+
+			$resp = NUVEI_CLASS::call_rest_api(
+                'createSubscription',
+                $this->plugin_settings,
+                array('merchantId', 'merchantSiteId', 'userTokenId', 'planId', 'userPaymentOptionId', 'initialAmount', 'recurringAmount', 'currency', 'timeStamp'),
+                $params
+            );
+		
+			// On Error
+			if (!$resp || !is_array($resp) || empty($resp['status']) || 'SUCCESS' != $resp['status']) {
+				$msg = $this->language->get('Error when try to start a Subscription by the Order.');
+
+				if (!empty($resp['reason'])) {
+					$msg .= '<br/>' . $this->language->get('Reason: ') . $resp['reason'];
+				}
+                
+                NUVEI_CLASS::create_log($this->plugin_settings, $msg);
+				
+                $this->model_checkout_order->addOrderHistory(
+                    $this->order_info['order_id'],
+                    $this->new_order_status,
+                    $msg,
+                    true // $send_message
+                );
+				
+				break;
+			}
+			
+			// On Success
+			$msg = $this->language->get('Subscription was created. ') . '<br/>'
+				. $this->language->get('Subscription ID: ') . $resp['subscriptionId'] . '.<br/>' 
+				. $this->language->get('Recurring amount: ') . $params['currency'] . ' ' . $recurringAmount;
+
+			$this->model_checkout_order->addOrderHistory(
+                $this->order_info['order_id'],
+                $this->new_order_status,
+                $msg,
+                true // $send_message
+            );
+		}
+			
+		return;
+    }
+    
+    private function subscription_cancel($transactionType, $order_id)
+    {
+        NUVEI_CLASS::create_log(
+            $this->plugin_settings,
+//            [
+//                'order info'    => $this->order_info,
+//            ],
+            'subscription_cancel()'
+        );
+        
+        if ('Void' != $transactionType || 'APPROVED' != $this->get_request_status()) {
+            NUVEI_CLASS::create_log($this->plugin_settings, 'subscription_cancel() first check fail.');
+			return;
+		}
+        
+        $order_data = $this->order_info['payment_custom_field'];
+        
+        foreach (array_reverse($order_data) as $transaction) {
+            if (!empty($transaction['subscrIDs']) && is_array($transaction['subscrIDs'])) {
+                foreach ($transaction['subscrIDs'] as $id) {
+                    $resp = NUVEI_CLASS::call_rest_api(
+                        'cancelSubscription',
+                        $this->plugin_settings,
+                        array('merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp'),
+                        ['subscriptionId' => $id]
+                    );
+                    
+                    // On Error
+                    if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
+                        $msg = $this->language->get('Error when try to cancel Subscription #') . $id . ' ';
+
+                        if (!empty($resp['reason'])) {
+                            $msg .= '<br/>' . $this->language->get('Reason: ', 'nuvei_woocommerce') 
+                                . $resp['reason'];
+                        }
+
+                        $this->model_checkout_order->addOrderHistory(
+                            $this->order_info['order_id'],
+                            $this->new_order_status,
+                            $msg,
+                            true // $send_message
+                        );
+                    }
+                }
+                
+                break;
+            }
+        }
+        
+		return;
+    }
+    
+    private function process_subs_state()
+    {
+        NUVEI_CLASS::create_log($this->plugin_settings, 'process_subs_state order_info');
+        
+        if ('subscription' != NUVEI_CLASS::get_param('dmnType')) {
+            return;
+        }
+            
+        $subscriptionState = NUVEI_CLASS::get_param('subscriptionState');
+        $subscriptionId    = (int) NUVEI_CLASS::get_param('subscriptionId');
+
+        if (empty($subscriptionState)) {
+            $this->return_message('Subscription DMN missing subscriptionState. Stop the process.');
+        }
+
+        $this->get_order_info_by_dmn();
+        
+        if(!$this->order_info || empty($this->order_info)) {
+            $this->return_message('DMN error - there is no order info.');
+        }
+
+        $order_data         = $this->order_info['payment_custom_field'];
+        $rec_order_status   = 6;
+
+        if ('active' == strtolower($subscriptionState)) {
+            $message = $this->language->get('Subscription is Active.') . '<br/>'
+                . $this->language->get('Subscription ID: ') . $subscriptionId . '<br/>'
+                . $this->language->get('Plan ID: ') . (int) NUVEI_CLASS::get_param('planId');
+
+            $rec_order_status = 1;
+        }
+        elseif ('inactive' == strtolower($subscriptionState)) {
+            $message = $this->language->get('Subscription is Inactive.') . '<br/>'
+                . $this->language->get('Subscription ID:') . ' ' . $subscriptionId . '<br/>'
+                . $this->language->get('Plan ID:') . ' ' . (int) NUVEI_CLASS::get_param('planId');
+
+            $rec_order_status = 2;
+        }
+        elseif ('canceled' == strtolower($subscriptionState)) {
+            $message = $this->language->get('Subscription was canceled.') . '<br/>'
+                . $this->language->get('Subscription ID:') . ' ' . $subscriptionId . '<br/>';
+
+            $rec_order_status = 3;
+        }
+
+        // save the Subscription ID
+        // just add the ID without the details, we need only the ID to cancel the Subscription
+        foreach($order_data as $key => $tansaction) {
+            if(in_array($tansaction['transactionType'], ['Sale', 'Settle'])) {
+                $order_data[$key]['subscrIDs'][] = (int) NUVEI_CLASS::get_param('subscriptionId');
+                break;
+            }
+            elseif ('Auth' == $tansaction['transactionType'] && 0 == $tansaction['totalAmount']) {
+                $order_data[$key]['subscrIDs'][] = (int) NUVEI_CLASS::get_param('subscriptionId');
+                break;
+            }
+            
+        }
+
+        // update Order payment_custom_field
+        $this->db->query(
+            "UPDATE `" . DB_PREFIX . "order` "
+            . "SET payment_custom_field = '" . json_encode($order_data) . "' "
+            . "WHERE order_id = " . $this->order_info['order_id']
+        );
+
+        NUVEI_CLASS::create_log(
+            $this->plugin_settings, 
+            $this->order_info['order_status_id'],
+            'order status before update order_recurring'
+        );
+
+        // update Recurring Order status
+        $this->db->query(
+            "UPDATE `" . DB_PREFIX . "order_recurring` "
+            . "SET status = " . $rec_order_status . " "
+            . "WHERE order_id = " . $this->order_info['order_id']
+        );
+
+        $this->model_checkout_order->addOrderHistory(
+            $this->order_info['order_id'],
+            $this->order_info['order_status_id'],
+            $message,
+            true // $send_message
+        );
+
+        $this->return_message('DMN received.');
+    }
+    
+    /**
+     * Order recurring transactions types:
+     * 0 - Date Added
+     * 1 - Payment
+     * 2 - Outstanding Payment
+     * 3 - Transaction Skipped
+     * 4 - Transaction Failed
+     * 5 - Transaction Cancelled
+     * 6 - Transaction Suspended
+     * 7 - Transaction Suspended Failed
+     * 8 - Transaction Outstanding Failed
+     * 9 - Transaction Expired
+     * 
+     * 
+     * @return void
+     */
+    private function process_subs_payment()
+    {
+        NUVEI_CLASS::create_log($this->plugin_settings, 'process_subs_payment()');
+        
+        $trans_id   = (int) NUVEI_CLASS::get_param('TransactionID');
+        $req_status = $this->get_request_status();
+        
+        if ('subscriptionPayment' != NUVEI_CLASS::get_param('dmnType') || 0 == $trans_id) {
+            return;
+        }
+        
+        $this->get_order_info_by_dmn();
+        
+        $rec_amount = (float) NUVEI_CLASS::get_param('totalAmount');
+
+        $message = $this->language->get('Subscription Payment was made.') . '<br/>'
+            . $this->language->get('Status: ') . $req_status . '<br/>'
+            . $this->language->get('Plan ID: ') . (int) NUVEI_CLASS::get_param('planId') . '<br/>'
+            . $this->language->get('Subscription ID: ') . (int) NUVEI_CLASS::get_param('subscriptionId') . '<br/>'
+            . $this->language->get('Amount: ') . $this->order_info['currency_code'] . ' ' . $rec_amount . '<br/>'
+            . $this->language->get('TransactionId: ') . $trans_id;
+
+        NUVEI_CLASS::create_log($this->plugin_settings, $this->order_info['order_status_id'], 'order status when get subscriptionPayment');
+
+        $this->model_checkout_order->addOrderHistory(
+            $this->order_info['order_id'],
+            $this->order_info['order_status_id'],
+            $message,
+            true // $send_message
+        );
+
+        $order_rec = $this->db->query(
+            "SELECT order_recurring_id "
+            . "FROM " . DB_PREFIX . "order_recurring "
+            . "WHERE order_id = ". (int) $this->order_info['order_id']
+        );
+
+        // order_recurring_transaction need the total in default value
+        $rec_amount = $rec_amount / $this->order_info['currency_value'];
+        
+        switch(strtolower($req_status)) {
+            case 'approved':
+                $trans_type = 1;
+                break;
+            
+            case 'declined':
+                $trans_type = 5;
+                break;
+            
+            default:
+                $trans_type = 4;
+                break;
+        }
+        
+        // save the recurring transaction
+        $this->db->query(
+            "INSERT INTO `" . DB_PREFIX . "order_recurring_transaction` "
+            . "(`order_recurring_id`, `reference`, `type`, `amount`, `date_added`) "
+            . "VALUES (". $order_rec->row['order_recurring_id'] .", ". $trans_id .", ". $trans_type .", ". $rec_amount .", NOW())"
+        );
+
+        $this->return_message('DMN received.');
+    }
+    
 }

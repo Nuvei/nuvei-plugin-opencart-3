@@ -2,6 +2,11 @@
 
 ---
 
+# 1.1
+```
+    * Enabled OC recurring support.
+```
+
 # 1.0
 ```
     * Replace WebSDK with Checkout SDK.

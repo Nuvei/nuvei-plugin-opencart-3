@@ -4,9 +4,6 @@ require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR
         . 'nuvei' . DIRECTORY_SEPARATOR . 'NUVEI_CLASS.php';
 
 try {
-    // load Nuvei language file and use it
-//    $this->language->load('extension/payment/nuvei');
-
     // load the nuvei script
     $this->document->addScript('view/javascript/nuvei_orders.js');
     

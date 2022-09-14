@@ -35,6 +35,8 @@ $_['text_block_cards_help'] = 'For examples <a href="https://docs.nuvei.com/docu
 
 $_['text_block_pms_help']   = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/checkout-2/payment-customization/#apm-whitelisting-blacklisting" target="_blank"> check the Documentation.</a>';
 
+$_['text_plan_id_help']     = 'For Rebilling you need at least one Rebilling Plan. Creat it, and get its number from the CPanel.';
+
 $_['text_change_order_status'] = 'Change the Order status to Pending on successful UpdateOrder request. By default OpenCart keep not finished Orders hidden and we do not recommend using Yes option on Prod.';
 
 $_['text_no_github_plugin_version']     = 'Nuvei message - can not find the plugin version into github changelog file.';
@@ -85,6 +87,7 @@ $_['entry_sdk_transl']          = 'SDK translations:';
 $_['entry_donwload_p_plans']    = 'Download Payment Plans:';
 $_['entry_dmn_url']             = 'Notification (DMN) URL:';
 $_['entry_change_order_status'] = 'Auto change the Order status:';
+$_['entry_rebilling_plan_id']   = 'Rebilling Plan ID:';
 
 $_['entry_auto_close_apm_popup']    = 'Auto close APM popup:';
 $_['nuvei_btn_remove_logs']         = 'Remove logs:';
@@ -94,18 +97,10 @@ $_['entry_sdk_version_help']        = 'It is not recommended to use Dev version 
 
 // Error					
 $_['error_permission']	      		= 'Warning: You do not have permission to modify Nuvei!'; 
-//$_['error_test_mode']               = 'Site Mode Required!';
-//$_['error_merchantId']              = 'Merchant ID Required!';
-//$_['error_merchantSiteId']          = 'Merchant Site ID Required!';
-//$_['error_secret']		     		= 'Merchant Secret Key Required!';
-//$_['error_hash']		     		= 'Hash Required!';
-//$_['error_payment_action']		    = 'Payment Action Required!';
-//$_['error_create_logs']             = 'Save Logs Required!';
-
 $_['The request faild.']		    = 'The request faild.';
-$_['Invalid request response. ']    = 'Invalid request response. ';
-$_['nuvei_unexpected_error']        = 'Unexpected error.';
+$_['Invalid request response.']     = 'Invalid request response.';
 
+$_['nuvei_unexpected_error']            = 'Unexpected error.';
 $_['nuvei_order_confirm_cancel']        = 'Are you sure, you want to Cancel Order';
 $_['nuvei_btn_void']                    = 'Void';
 $_['nuvei_order_confirm_settle']        = 'Are you sure, you want to Settle Order';

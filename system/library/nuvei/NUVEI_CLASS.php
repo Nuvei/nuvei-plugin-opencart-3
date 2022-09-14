@@ -8,7 +8,7 @@
  * @author Nuvei
  */
 
-define('NUVEI_PLUGIN_V',            '1.0');
+define('NUVEI_PLUGIN_V',            '1.1');
 define('NUVEI_PLUGIN_CODE',         'nuvei');
 define('NUVEI_PLUGIN_TITLE',        'Nuvei');
 
@@ -185,11 +185,10 @@ class NUVEI_CLASS
         $time = date('YmdHis', time());
        
         // set here some of the mandatory parameters
-        $params = array_merge(
+        $params = array_merge_recursive(
             array(
                 'merchantId'        => $settings[NUVEI_SETTINGS_PREFIX . 'merchantId'],
                 'merchantSiteId'    => $settings[NUVEI_SETTINGS_PREFIX . 'merchantSiteId'],
-                'clientRequestId'   => $time . '_' . uniqid(),
                 'timeStamp'         => $time,
                 'webMasterId'       => 'OpenCart ' . VERSION,
                 'sourceApplication' => NUVEI_SOURCE_APP,

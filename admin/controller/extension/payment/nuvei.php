@@ -23,55 +23,12 @@ class ControllerExtensionPaymentNuvei extends Controller
 	
     public function install()
     {
-//        $q =
-//            "CREATE TABLE IF NOT EXISTS `nuvei_transactions` (
-//                `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-//                `orderId` int(10) unsigned NOT NULL,
-//                `data` text NOT NULL,
-//                
-//                PRIMARY KEY (`id`),
-//                KEY `orderId` (`orderId`)
-//			) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
-//        
-//        $this->db->query($q);
         
-        // change the default value for order_status_id in order table to 1
-//        $q = "EXPLAIN " . DB_PREFIX . "order";
-//        $resp = $this->db->query($q);
-//        
-//        if(isset($resp->rows) && !empty($resp->rows)) {
-//            foreach($resp->rows as $field) {
-//                if($field['Field'] == 'order_status_id') {
-//                    if(intval($field['Default']) == 0) {
-//                        $q = "ALTER TABLE `". DB_PREFIX ."order` CHANGE `order_status_id` "
-//							. "`order_status_id` INT(11) NOT NULL DEFAULT '1';";
-//                        $this->db->query($q);
-//                    }
-//                    
-//                    break;
-//                }
-//            }
-//        }
     }
     
     public function uninstall()
     {
-        // change the default value for order_status_id in order table to 1
-//        $q = "EXPLAIN " . DB_PREFIX . "order";
-//        $resp = $this->db->query($q);
-//        
-//        if(isset($resp->rows) && !empty($resp->rows)) {
-//            foreach($resp->rows as $field) {
-//                if($field['Field'] == 'order_status_id') {
-//                    if(intval($field['Default']) == 1) {
-//                        $q = "ALTER TABLE `". DB_PREFIX ."order` CHANGE `order_status_id` `order_status_id` INT(11) NOT NULL DEFAULT '0';";
-//                        $this->db->query($q);
-//                    }
-//                    
-//                    break;
-//                }
-//            }
-//        }
+        
     }
     
 	public function index()
@@ -83,14 +40,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         // get settings
         $this->plugin_settings = $this->model_setting_setting->getSetting(trim(NUVEI_SETTINGS_PREFIX, '_'));
         
-        // detect ajax call
-//        if(isset($_SERVER['HTTP_X_REQUESTED_WITH'], $this->request->post['action'])
-//            && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest'
-//            && (isset($this->request->post['orderId']) || isset($this->request->post['refId']))
-//        ) {
         if(isset($this->request->server['HTTP_X_REQUESTED_WITH'], $this->request->post['action'])
             && 'XMLHttpRequest' == $this->request->server['HTTP_X_REQUESTED_WITH']
-//            && ( isset($this->request->post['orderId']) || isset($this->request->post['refId']))
         ) {
             $this->ajax_call();
             exit;
@@ -166,7 +117,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         );
         
         // DMN URL
-        $this->data['nuvei_dmn_url'] = $this->url->link(NUVEI_CONTROLLER_PATH . '/callback');
+        $this->data['nuvei_dmn_url'] = str_replace('admin/', '', $this->url->link(NUVEI_CONTROLLER_PATH . '/callback'));
 
         // set statuses manually
         $statuses = array(
@@ -377,6 +328,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 		
         $ref_parameters = array(
 			'clientUniqueId'        => $order_id . '_' . $request_amount . '_' . $time . '_' . $clientUniqueId,
+            'clientRequestId'       => $time . '_' . uniqid(),
 			'amount'                => $this->request->post['amount'],
 			'currency'              => $this->data['currency_code'],
 			'relatedTransactionId'  => $last_sale_tr['transactionId'],
@@ -576,9 +528,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         $order_id           = (int) $this->request->post['orderId'];
         $this->notify_url   = $this->url->link(
             NUVEI_CONTROLLER_PATH
-//            . '/callback&nuvei_create_logs=' . $_SESSION['nuvei_create_logs']
-            . '/callback'
-            . '&action=' . $this->ajax_action . '&order_id=' . $order_id
+            . '/callback&action=' . $this->ajax_action . '&order_id=' . $order_id
         );
 
         $this->notify_url = str_replace('admin/', '', $this->notify_url);
@@ -730,8 +680,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         NUVEI_CLASS::create_log($this->plugin_settings, $nuvei_block_pms, '$nuvei_block_pms');
 			
 		$apms_params		= array(
-			'sessionToken'  => $session_token,
-			'languageCode'  => $this->language->get('code'),
+			'sessionToken'      => $session_token,
+			'languageCode'      => $this->language->get('code'),
+            'clientRequestId'   => date('YmdHis', time()) . '_' . uniqid(),
 		);
         
 		$res = NUVEI_CLASS::call_rest_api(
@@ -779,6 +730,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'getSessionToken', 
             $this->plugin_settings, 
             ['merchantId', 'merchantSiteId', 'clientRequestId', 'timeStamp'],
+            ['clientRequestId'   => date('YmdHis', time()) . '_' . uniqid()]
         );
         
         if(!empty($resp['sessionToken'])) {
@@ -788,12 +740,14 @@ class ControllerExtensionPaymentNuvei extends Controller
         return '';
     }
     
+    /*
     private function get_nuvei_plans()
     {
         exit(json_encode([
             'status' => 0
         ]));
     }
+     */
     
     private function get_nuvei_vars()
     {
