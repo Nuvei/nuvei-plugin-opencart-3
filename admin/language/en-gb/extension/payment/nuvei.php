@@ -100,6 +100,11 @@ $_['error_permission']	      		= 'Warning: You do not have permission to modify 
 $_['The request faild.']		    = 'The request faild.';
 $_['Invalid request response.']     = 'Invalid request response.';
 
+$_['Cancel requrest for Subscription ID ']      = 'Cancel requrest for Subscription ID ';
+$_['failed.']                                   = 'failed.';
+$_['was declined.']                             = 'was declined.';
+$_['Cancel Rebiling requrest/s was/were sent.'] = 'Cancel Rebiling requrest/s was/were sent.';
+
 $_['nuvei_unexpected_error']            = 'Unexpected error.';
 $_['nuvei_order_confirm_cancel']        = 'Are you sure, you want to Cancel Order';
 $_['nuvei_btn_void']                    = 'Void';

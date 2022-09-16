@@ -545,8 +545,7 @@ class ControllerExtensionPaymentNuvei extends Controller
                 break;
             }
             
-            if(
-                'void' == $this->request->post['action']
+            if('void' == $this->request->post['action']
                 && in_array($tr_data['transactionType'], array('Auth', 'Settle', 'Sale'))
             ) {
                 $last_allowed_trans = $tr_data;
@@ -556,6 +555,53 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $amount = $this->get_price($this->data['total']);
         
+        # when try to Void Zero Auth Transaction, just try to cancel the Rebilling
+        if (0 == $amount
+            && 'void' == $this->request->post['action']
+            && !empty($last_allowed_trans['subscrIDs'])
+            && is_array($last_allowed_trans['subscrIDs'])
+        ) {
+            $resp = array(
+                'status'    => 0,
+                'msg'       => ''
+            );
+            
+            foreach($last_allowed_trans['subscrIDs'] as $subscrID) {
+                $resp = NUVEI_CLASS::call_rest_api(
+                    'cancelSubscription',
+                    $this->plugin_settings,
+                    ['merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp'],
+                    ['subscriptionId' => $subscrID]
+                );
+                
+                if(!$resp || !is_array($resp)
+                    || @$resp['status'] == 'ERROR'
+                    || @$resp['transactionStatus'] == 'ERROR'
+                ) {
+                    $resp['msg'] = $this->language->get('Cancel requrest for Subscription ID ') 
+                        . $subscrID . $this->language->get('failed.') . ' ';
+                    continue;
+                }
+
+                if(@$resp['transactionStatus'] == 'DECLINED') {
+                    $resp['msg'] = $this->language->get('Cancel requrest for Subscription ID ') 
+                        . $subscrID . $this->language->get('was declined.') . ' ';
+                    continue;
+                }
+
+                $resp['status'] = 1;
+            }
+            
+            $this->db->query(
+                'UPDATE ' . DB_PREFIX . 'order '
+                . 'SET order_status_id = ' . $this->config->get(NUVEI_SETTINGS_PREFIX . 'canceled_status_id') . ' '
+                . 'WHERE order_id = ' . $order_id
+            );
+            
+            exit(json_encode($resp));
+        }
+        
+        # normal Void or Settle
         $params = array(
             'clientRequestId'       => $time . '_' . $last_allowed_trans['transactionId'],
             'clientUniqueId'        => uniqid(),
@@ -566,7 +612,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'url'                   => $this->notify_url, // a custom parameter
             'authCode'              => $last_allowed_trans['authCode'],
         );
-        
+
         $resp = NUVEI_CLASS::call_rest_api(
             'settle' == $this->request->post['action'] ? 'settleTransaction' : 'voidTransaction',
             $this->plugin_settings,
@@ -801,6 +847,9 @@ class ControllerExtensionPaymentNuvei extends Controller
                 && "cc_card" == $nuvei_last_trans['paymentMethod']
             ) {
                 $nuveiAllowVoidBtn = 1;
+            }
+            if ($this->data['order_status_id']  == $this->config->get(NUVEI_SETTINGS_PREFIX . 'canceled_status_id')) {
+                $nuveiAllowVoidBtn = 0;
             }
 
             // can we show Settle button
