@@ -797,7 +797,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         // rebiling parameters
         $rebilling_params = $this->preprare_rebilling_params();
         // when will use UPOs
-        if(0 == $rebilling_params['isRebilling']) {
+        if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
             $params['userTokenId'] = $this->order_addresses['billingAddress']['email'];
         }
         elseif($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_upos'] == 1) {
@@ -958,15 +958,15 @@ class ControllerExtensionPaymentNuvei extends Controller
         $nuvei_rebilling_data   = [];
         
         // default rebiling parameters
-        $params['isRebilling']                                        = 1;
-        $params['paymentOption']['card']['threeD']['isDynamic3D']     = 1;
-        $params['paymentOption']['card']['threeD']['rebillFrequency'] = 0;
-        $params['paymentOption']['card']['threeD']['rebillExpiry']    = date('Ymd', time());
+//        $params['isRebilling']                                        = 1;
+//        $params['paymentOption']['card']['threeD']['isDynamic3D']     = 1;
+//        $params['paymentOption']['card']['threeD']['rebillFrequency'] = 0;
+//        $params['paymentOption']['card']['threeD']['rebillExpiry']    = date('Ymd', time());
         
         # check for a product with a Payment Plan
         $rebilling_data = $this->cart->getRecurringProducts();
         
-        //NUVEI_CLASS::create_log($this->plugin_settings, $rebilling_data, 'Rebilling products data');
+        NUVEI_CLASS::create_log($this->plugin_settings, $rebilling_data, 'Rebilling products data');
         
         if(count($rebilling_data) > 0) {
             foreach($rebilling_data as $data) {
