@@ -121,45 +121,26 @@ function loadNuveiExtras() {
     var scSettleButton      = '';
 
 	if(scPlaceOne.length > 0) {
-		// 1.1.place Refund button
+		// 1.1. Refund button
 		if('1' == nuveiVars.nuveiAllowRefundBtn) {
-			scRefundBtnsHtml = ''
-				//'<tr class="sc_rows">'
-				//	+ '<td class="text-left" colspan="3">'
-				//		+ '<span>'+ nuveiVars.nuveiCreateRefund +'&nbsp;&nbsp;<i id="refund_spinner" class="fa fa-circle-o-notch fa-spin hide"></i></span>'
-				//		+ '<div class="input-group pull-right" style="max-width:70%;">'
-//							+ '<input type="text" class="form-control" style="height: 22px; padding: 2px 5px; padding: 2px 5px; line-height: 1.5; border-radius: 3px;" id="refund_amount" value="" />'
-							//+ '<span class="input-group-btn">'
-//                                + '<button id="sc_manual_refund_btn" class="btn btn-danger btn-xs sc_order_btns" type="button" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmRefund +'\', \'refundManual\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnManualRefund +'</button>'
-                            ;
+			scRefundBtnsHtml = '';
 					
 			// add SC Refund button only when order is Complete (paid)
-			scRefundBtnsHtml +=
-									'<button class="btn btn-danger btn-xs sc_order_btns" type="button" style="margin-left: 2px;"  onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmRefund +'\', \'refund\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnRefund +'</button>';
+			scRefundBtnsHtml += '<button class="btn btn-danger btn-xs sc_order_btns" type="button" style="margin-left: 2px;"  onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmRefund +'\', \'refund\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnRefund +'</button>';
 					
-//			scRefundBtnsHtml += 		
-//							//'</span>'
-//						 '</div>'
-//					+ '</td>'
-//				+ '</tr>';
-					
-//			scPlaceOne.append(scRefundBtnsHtml);
 		}
-		// place Refund button END
 
-		// 1.2.set Void btn
+		// 1.2. Void btn
 		if('1' == nuveiVars.nuveiAllowVoidBtn) {
 			scVoidButton = '<button class="btn btn-danger btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmCancel +'\', \'void\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnVoid +'</button>';
 		}
-		// set Void btn END
 
-		// 1.3.set Settle btn
+		// 1.3. Settle btn
 		if('1' == nuveiVars.nuveiAllowSettleBtn) {
 			scSettleButton = '<button class="btn btn-success btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmSettle +'\', \'settle\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnSettle +'</button>';
 		}
-		// set Settle btn END
 
-		// 1.4.place Settle and Void button
+		// 1.4.place buttons
 		scPlaceOne.append(
 			'<tr class="sc_rows">'
 				+ '<td class="text-left" colspan="3">'
@@ -172,7 +153,6 @@ function loadNuveiExtras() {
 				+ '</td>'
 			+ '</tr>'
 		);
-		// place Settle and Void button END
 	}
 	// set the changes in Options table END
 

@@ -806,6 +806,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             // can we show Settle button
             if('Auth' == $nuvei_last_trans['transactionType']
                 && 'approved' == $nuvei_last_trans['status']
+                && (float) $nuvei_last_trans['totalAmount'] > 0
             ) {
                 $nuveiAllowSettleBtn = 1;
             }

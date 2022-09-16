@@ -559,6 +559,11 @@ class ControllerExtensionPaymentNuvei extends Controller
                 if($transactionType == 'Auth') {
                     $message    = $this->language->get('The amount has been authorized and wait for Settle.');
                     $status_id  = $this->config->get(NUVEI_SETTINGS_PREFIX . 'pending_status_id');
+                    
+                    if(0 == $total_amount) {
+                        $status_id  = $this->config->get(NUVEI_SETTINGS_PREFIX . 'order_status_id');
+                        $message    = $this->language->get('The amount has been authorized.');
+                    }
                 }
                 elseif($transactionType == 'Settle') {
                     $message = $this->language->get('The amount has been captured by Nuvei.');
