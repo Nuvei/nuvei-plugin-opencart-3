@@ -25,25 +25,25 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->load->model('checkout/order');
 		$this->load->model('account/reward');
         $this->load_settings();
-//        $this->load->model('setting/setting');
         $this->language->load(NUVEI_CONTROLLER_PATH);
         
         $this->order_info       = $this->model_checkout_order->getOrder($this->session->data['order_id']);
-//        $this->plugin_settings  = $this->model_setting_setting->getSetting(trim(NUVEI_SETTINGS_PREFIX, '_'));
         $this->order_addresses  = $this->get_order_addresses();
         $this->is_user_logged   = !empty($this->session->data['customer_id']) ? 1 : 0;
 		
-		// detect ajax call when we need new Open Order
-//        if(!empty($_SERVER['HTTP_X_REQUESTED_WITH'])
-//			&& 'XMLHttpRequest' === $_SERVER['HTTP_X_REQUESTED_WITH']
-//			&& NUVEI_CLASS::get_param('route') == NUVEI_CONTROLLER_PATH
-//		) {
         if(isset($this->request->server['HTTP_X_REQUESTED_WITH'])
             && 'XMLHttpRequest' == $this->request->server['HTTP_X_REQUESTED_WITH']
             && NUVEI_CONTROLLER_PATH == $this->request->get['route']
         ) {
             $this->ajax_call();
             exit;
+        }
+        
+        // before call Open Order check for not allowed combination of prdocusts
+        if (count($this->cart->getRecurringProducts()) > 0
+            && count($this->cart->getProducts()) > 1
+        ) {
+            exit('<div class="alert alert-danger">'. $this->language->get('error_nuvei_products') .'</div>');
         }
         
         // Open Order

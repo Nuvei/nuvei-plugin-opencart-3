@@ -4,6 +4,8 @@ $_['error_insuff_funds']    = 'You have Insufficient funds, please go back and r
 
 $_['error_nuvei_gateway']   = 'There is a problem with selected payment provider. Please, contact site Administrator and use another payment option!';
 
+$_['error_nuvei_products']  = 'You can not combine simple Products and a Products with Payment Plan in same Order. Please, remove some of the products and continue!';
+
 $_['nuvei_attention']           = 'Attention!';
 $_['nuvei_go_to_step_2_error']  = 'You must confirm all steps starting from Step 2, to get correct APMs!';
 $_['pm_error']                  = 'Payment method error, please choose another one and try again!';
