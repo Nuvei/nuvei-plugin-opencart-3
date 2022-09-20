@@ -1178,7 +1178,8 @@ class ControllerExtensionPaymentNuvei extends Controller
 		}
         
         $qty                = $order_products->row['quantity'];
-        $recurringAmount    = round($prod_plan->row['price'] * $this->order_info['currency_value'], 2);
+        // multiply amount by the quantity
+        $recurringAmount    = round($prod_plan->row['price'] * $this->order_info['currency_value'] * $qty, 2);
         // this is the only place to pass the Order ID, we will need it later, to identify the Order
 		$clientRequestId    = $order_id . '_' . uniqid();
         
@@ -1207,65 +1208,61 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->db->query($query);
         
         // try to start rebillings
-        for ($qty; $qty > 0; $qty--) {
-            $params = array(
-                'clientRequestId'       => $clientRequestId,
-                'userPaymentOptionId'   => (int) NUVEI_CLASS::get_param('userPaymentOptionId'),
-                'userTokenId'           => NUVEI_CLASS::get_param('user_token_id'),
-                'currency'              => NUVEI_CLASS::get_param('currency'),
-                'initialAmount'         => 0,
-                'planId'            => @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'plan_id'],
-                'recurringAmount'   => $recurringAmount,
-                'recurringPeriod'   => [
-                    $prod_plan->row['frequency'] => $prod_plan->row['cycle'],
-                ],
-                'startAfter'        => [
-                    $prod_plan->row['trial_frequency'] => $prod_plan->row['trial_duration']
-                ],
-                'endAfter'          => [
-                    $prod_plan->row['frequency'] => $prod_plan->row['duration'],
-                ],
-            );
+        $params = array(
+            'clientRequestId'       => $clientRequestId,
+            'userPaymentOptionId'   => (int) NUVEI_CLASS::get_param('userPaymentOptionId'),
+            'userTokenId'           => NUVEI_CLASS::get_param('user_token_id'),
+            'currency'              => NUVEI_CLASS::get_param('currency'),
+            'initialAmount'         => 0,
+            'planId'            => @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'plan_id'],
+            'recurringAmount'   => $recurringAmount,
+            'recurringPeriod'   => [
+                $prod_plan->row['frequency'] => $prod_plan->row['cycle'],
+            ],
+            'startAfter'        => [
+                $prod_plan->row['trial_frequency'] => $prod_plan->row['trial_duration']
+            ],
+            'endAfter'          => [
+                $prod_plan->row['frequency'] => $prod_plan->row['duration'],
+            ],
+        );
 
-			$resp = NUVEI_CLASS::call_rest_api(
-                'createSubscription',
-                $this->plugin_settings,
-                array('merchantId', 'merchantSiteId', 'userTokenId', 'planId', 'userPaymentOptionId', 'initialAmount', 'recurringAmount', 'currency', 'timeStamp'),
-                $params
-            );
-		
-			// On Error
-			if (!$resp || !is_array($resp) || empty($resp['status']) || 'SUCCESS' != $resp['status']) {
-				$msg = $this->language->get('Error when try to start a Subscription by the Order.');
+        $resp = NUVEI_CLASS::call_rest_api(
+            'createSubscription',
+            $this->plugin_settings,
+            array('merchantId', 'merchantSiteId', 'userTokenId', 'planId', 'userPaymentOptionId', 'initialAmount', 'recurringAmount', 'currency', 'timeStamp'),
+            $params
+        );
 
-				if (!empty($resp['reason'])) {
-					$msg .= '<br/>' . $this->language->get('Reason: ') . $resp['reason'];
-				}
-                
-                NUVEI_CLASS::create_log($this->plugin_settings, $msg);
-				
-                $this->model_checkout_order->addOrderHistory(
-                    $this->order_info['order_id'],
-                    $this->new_order_status,
-                    $msg,
-                    true // $send_message
-                );
-				
-				break;
-			}
-			
-			// On Success
-			$msg = $this->language->get('Subscription was created. ') . '<br/>'
-				. $this->language->get('Subscription ID: ') . $resp['subscriptionId'] . '.<br/>' 
-				. $this->language->get('Recurring amount: ') . $params['currency'] . ' ' . $recurringAmount;
+        // On Error
+        if (!$resp || !is_array($resp) || empty($resp['status']) || 'SUCCESS' != $resp['status']) {
+            $msg = $this->language->get('Error when try to start a Subscription by the Order.');
 
-			$this->model_checkout_order->addOrderHistory(
+            if (!empty($resp['reason'])) {
+                $msg .= '<br/>' . $this->language->get('Reason: ') . $resp['reason'];
+            }
+
+            NUVEI_CLASS::create_log($this->plugin_settings, $msg);
+
+            $this->model_checkout_order->addOrderHistory(
                 $this->order_info['order_id'],
                 $this->new_order_status,
                 $msg,
                 true // $send_message
             );
-		}
+        }
+
+        // On Success
+        $msg = $this->language->get('Subscription was created. ') . '<br/>'
+            . $this->language->get('Subscription ID: ') . $resp['subscriptionId'] . '.<br/>' 
+            . $this->language->get('Recurring amount: ') . $params['currency'] . ' ' . $recurringAmount;
+
+        $this->model_checkout_order->addOrderHistory(
+            $this->order_info['order_id'],
+            $this->new_order_status,
+            $msg,
+            true // $send_message
+        );
 			
 		return;
     }
