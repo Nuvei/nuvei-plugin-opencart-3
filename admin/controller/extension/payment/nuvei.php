@@ -559,19 +559,20 @@ class ControllerExtensionPaymentNuvei extends Controller
         if (0 == $amount
             && 'void' == $this->request->post['action']
             && !empty($last_allowed_trans['subscrIDs'])
-            && is_array($last_allowed_trans['subscrIDs'])
+//            && is_array($last_allowed_trans['subscrIDs'])
         ) {
             $resp = array(
                 'status'    => 0,
                 'msg'       => ''
             );
             
-            foreach($last_allowed_trans['subscrIDs'] as $subscrID) {
+            //foreach($last_allowed_trans['subscrIDs'] as $subscrID) {
                 $resp = NUVEI_CLASS::call_rest_api(
                     'cancelSubscription',
                     $this->plugin_settings,
                     ['merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp'],
-                    ['subscriptionId' => $subscrID]
+//                    ['subscriptionId' => $subscrID]
+                    ['subscriptionId' => $last_allowed_trans['subscrIDs']]
                 );
                 
                 if(!$resp || !is_array($resp)
@@ -579,18 +580,17 @@ class ControllerExtensionPaymentNuvei extends Controller
                     || @$resp['transactionStatus'] == 'ERROR'
                 ) {
                     $resp['msg'] = $this->language->get('Cancel requrest for Subscription ID ') 
-                        . $subscrID . $this->language->get('failed.') . ' ';
-                    continue;
+                        . $last_allowed_trans['subscrIDs'] . $this->language->get('failed.') . ' ';
+//                    continue;
                 }
-
-                if(@$resp['transactionStatus'] == 'DECLINED') {
+                elseif(@$resp['transactionStatus'] == 'DECLINED') {
                     $resp['msg'] = $this->language->get('Cancel requrest for Subscription ID ') 
-                        . $subscrID . $this->language->get('was declined.') . ' ';
-                    continue;
+                        . $last_allowed_trans['subscrIDs'] . $this->language->get('was declined.') . ' ';
+//                    continue;
                 }
 
                 $resp['status'] = 1;
-            }
+            //}
             
             $this->db->query(
                 'UPDATE ' . DB_PREFIX . 'order '

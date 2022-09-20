@@ -1285,18 +1285,22 @@ class ControllerExtensionPaymentNuvei extends Controller
         $order_data = $this->order_info['payment_custom_field'];
         
         foreach (array_reverse($order_data) as $transaction) {
-            if (!empty($transaction['subscrIDs']) && is_array($transaction['subscrIDs'])) {
-                foreach ($transaction['subscrIDs'] as $id) {
+//            if (!empty($transaction['subscrIDs']) && is_array($transaction['subscrIDs'])) {
+            if (!empty($transaction['subscrIDs'])) {
+//                foreach ($transaction['subscrIDs'] as $id) {
                     $resp = NUVEI_CLASS::call_rest_api(
                         'cancelSubscription',
                         $this->plugin_settings,
                         array('merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp'),
-                        ['subscriptionId' => $id]
+//                        ['subscriptionId' => $id]
+                        ['subscriptionId' => $transaction['subscrIDs']]
                     );
                     
                     // On Error
                     if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
-                        $msg = $this->language->get('Error when try to cancel Subscription #') . $id . ' ';
+//                        $msg = $this->language->get('Error when try to cancel Subscription #') . $id . ' ';
+                        $msg = $this->language->get('Error when try to cancel Subscription #')
+                            . $transaction['subscrIDs'] . ' ';
 
                         if (!empty($resp['reason'])) {
                             $msg .= '<br/>' . $this->language->get('Reason: ', 'nuvei_woocommerce') 
@@ -1310,7 +1314,7 @@ class ControllerExtensionPaymentNuvei extends Controller
                             true // $send_message
                         );
                     }
-                }
+//                }
                 
                 break;
             }
@@ -1368,11 +1372,13 @@ class ControllerExtensionPaymentNuvei extends Controller
         // just add the ID without the details, we need only the ID to cancel the Subscription
         foreach($order_data as $key => $tansaction) {
             if(in_array($tansaction['transactionType'], ['Sale', 'Settle'])) {
-                $order_data[$key]['subscrIDs'][] = (int) NUVEI_CLASS::get_param('subscriptionId');
+//                $order_data[$key]['subscrIDs'][] = (int) NUVEI_CLASS::get_param('subscriptionId');
+                $order_data[$key]['subscrIDs'] = (int) NUVEI_CLASS::get_param('subscriptionId');
                 break;
             }
             elseif ('Auth' == $tansaction['transactionType'] && 0 == $tansaction['totalAmount']) {
-                $order_data[$key]['subscrIDs'][] = (int) NUVEI_CLASS::get_param('subscriptionId');
+//                $order_data[$key]['subscrIDs'][] = (int) NUVEI_CLASS::get_param('subscriptionId');
+                $order_data[$key]['subscrIDs'] = (int) NUVEI_CLASS::get_param('subscriptionId');
                 break;
             }
             
