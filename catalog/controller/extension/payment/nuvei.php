@@ -976,8 +976,16 @@ class ControllerExtensionPaymentNuvei extends Controller
                 }
                 
                 $nuvei_rebilling_data = [
-                    'product_id'    => $data['product_id'],
-                    'recurring_id'  => $data['recurring']['recurring_id'],
+                    'product_id'        => $data['product_id'],
+                    'recurring_id'      => $data['recurring']['recurring_id'],
+                    'recurring_amount'  => round(
+                        $this->tax->calculate(
+                            $data['recurring']['price'] * $data['quantity'],
+                            $data['tax_class_id'],
+                            $this->config->get('config_tax')
+                        ),
+                        2
+                    )
                 ];
             }
             
@@ -1143,6 +1151,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             || !is_array($subscr_data)
             || empty($subscr_data['product_id'])
             || empty($subscr_data['recurring_id'])
+            || empty($subscr_data['recurring_amount'])
         ) {
             NUVEI_CLASS::create_log($this->plugin_settings, 'subscription_start() first check fail.');
 			return;
@@ -1177,11 +1186,13 @@ class ControllerExtensionPaymentNuvei extends Controller
 			return;
 		}
         
-        $qty                = $order_products->row['quantity'];
-        // multiply amount by the quantity
-        $recurringAmount    = round($prod_plan->row['price'] * $this->order_info['currency_value'] * $qty, 2);
+        $qty = $order_products->row['quantity'];
+        
+        // get recurring amout with taxes, same as OC do
+//        $recurringAmount = round($prod_plan->row['price'] * $this->order_info['currency_value'] * $qty, 2);
+        
         // this is the only place to pass the Order ID, we will need it later, to identify the Order
-		$clientRequestId    = $order_id . '_' . uniqid();
+		$clientRequestId = $order_id . '_' . uniqid();
         
         // get Recurring Name and Description
         $rec_descr = $this->db->query(
@@ -1201,7 +1212,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         // save the Order in Recurring Orders section
         $query = 'INSERT INTO ' . DB_PREFIX . 'order_recurring '
             . '(`order_id`, `reference`, `product_id`, `product_name`, `product_quantity`, `recurring_id`, `recurring_name`, `recurring_description`, `recurring_frequency`, `recurring_cycle`, `recurring_duration`, `recurring_price`, `trial`, `trial_frequency`, `trial_cycle`, `trial_duration`, `trial_price`, `status`, `date_added`) '
-            . 'VALUES ('. $this->order_info['order_id'] .', '. (int) NUVEI_CLASS::get_param('TransactionID') .', '. $order_products->row['product_id'] .', "'. $order_products->row['name'] .'", '. $qty .', '. $prod_plan->row['recurring_id'] .', "'. $rec_name .'", "'. $rec_name .'", "'. $prod_plan->row['frequency'] .'", '. $prod_plan->row['cycle'] .', '. $prod_plan->row['duration'] .', '. $recurringAmount .', '. $prod_plan->row['trial_status'] .', "'. $prod_plan->row['trial_frequency'] .'", '. $prod_plan->row['trial_cycle'] .', '. $prod_plan->row['trial_duration'] .', '. $prod_plan->row['trial_price'] .', 6, NOW())';
+            . 'VALUES ('. $this->order_info['order_id'] .', '. (int) NUVEI_CLASS::get_param('TransactionID') .', '. $order_products->row['product_id'] .', "'. $order_products->row['name'] .'", '. $qty .', '. $prod_plan->row['recurring_id'] .', "'. $rec_name .'", "'. $rec_name .'", "'. $prod_plan->row['frequency'] .'", '. $prod_plan->row['cycle'] .', '. $prod_plan->row['duration'] .', '. $subscr_data['recurring_amount'] .', '. $prod_plan->row['trial_status'] .', "'. $prod_plan->row['trial_frequency'] .'", '. $prod_plan->row['trial_cycle'] .', '. $prod_plan->row['trial_duration'] .', '. $prod_plan->row['trial_price'] .', 6, NOW())';
         
         //NUVEI_CLASS::create_log($this->plugin_settings, $query, 'insert query');
         
@@ -1215,7 +1226,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'currency'              => NUVEI_CLASS::get_param('currency'),
             'initialAmount'         => 0,
             'planId'            => @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'plan_id'],
-            'recurringAmount'   => $recurringAmount,
+            'recurringAmount'   => $subscr_data['recurring_amount'],
             'recurringPeriod'   => [
                 $prod_plan->row['frequency'] => $prod_plan->row['cycle'],
             ],
@@ -1255,7 +1266,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         // On Success
         $msg = $this->language->get('Subscription was created. ') . '<br/>'
             . $this->language->get('Subscription ID: ') . $resp['subscriptionId'] . '.<br/>' 
-            . $this->language->get('Recurring amount: ') . $params['currency'] . ' ' . $recurringAmount;
+            . $this->language->get('Recurring amount: ') . $params['currency'] . ' ' . $subscr_data['recurring_amount'];
 
         $this->model_checkout_order->addOrderHistory(
             $this->order_info['order_id'],
