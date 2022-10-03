@@ -975,17 +975,25 @@ class ControllerExtensionPaymentNuvei extends Controller
                     continue;
                 }
                 
+                $recurring_amount = round(
+                    $this->tax->calculate(
+                        $data['recurring']['price'] * $data['quantity'],
+                        $data['tax_class_id'],
+                        $this->config->get('config_tax')
+                    ),
+                    2
+                );
+                
+                $recurring_amount_formatted = $this->currency->format(
+                    $recurring_amount,
+                    $this->session->data['currency']
+                );
+                
                 $nuvei_rebilling_data = [
                     'product_id'        => $data['product_id'],
                     'recurring_id'      => $data['recurring']['recurring_id'],
-                    'recurring_amount'  => round(
-                        $this->tax->calculate(
-                            $data['recurring']['price'] * $data['quantity'],
-                            $data['tax_class_id'],
-                            $this->config->get('config_tax')
-                        ),
-                        2
-                    )
+                    'recurring_amount'  => $recurring_amount,
+                    'rec_am_formatted'  => $recurring_amount_formatted,
                 ];
             }
             
@@ -1266,7 +1274,15 @@ class ControllerExtensionPaymentNuvei extends Controller
         // On Success
         $msg = $this->language->get('Subscription was created. ') . '<br/>'
             . $this->language->get('Subscription ID: ') . $resp['subscriptionId'] . '.<br/>' 
-            . $this->language->get('Recurring amount: ') . $params['currency'] . ' ' . $subscr_data['recurring_amount'];
+//            . $this->language->get('Recurring amount: ') . $params['currency'] . ' ' . $subscr_data['recurring_amount'];
+            . $this->language->get('Recurring amount: ') . $this->currency->format(
+                $this->tax->calculate(
+                    $subscr_data['recurring_amount'],
+                    $this->order_info['tax_class_id'],
+                    $this->config->get('config_tax')
+                ),
+                $this->session->data['currency']
+            );
 
         $this->model_checkout_order->addOrderHistory(
             $this->order_info['order_id'],
@@ -1460,7 +1476,15 @@ class ControllerExtensionPaymentNuvei extends Controller
             . $this->language->get('Status: ') . $req_status . '<br/>'
             . $this->language->get('Plan ID: ') . (int) NUVEI_CLASS::get_param('planId') . '<br/>'
             . $this->language->get('Subscription ID: ') . (int) NUVEI_CLASS::get_param('subscriptionId') . '<br/>'
-            . $this->language->get('Amount: ') . $this->order_info['currency_code'] . ' ' . $rec_amount . '<br/>'
+//            . $this->language->get('Amount: ') . $this->order_info['currency_code'] . ' ' . $rec_amount . '<br/>'
+            . $this->language->get('Amount: ') . $this->currency->format(
+                $this->tax->calculate(
+                    $rec_amount,
+                    $this->order_info['tax_class_id'],
+                    $this->config->get('config_tax')
+                ),
+                $this->session->data['currency']
+            ) . '<br/>'
             . $this->language->get('TransactionId: ') . $trans_id;
 
         NUVEI_CLASS::create_log($this->plugin_settings, $this->order_info['order_status_id'], 'order status when get subscriptionPayment');
