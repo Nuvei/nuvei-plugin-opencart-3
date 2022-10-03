@@ -49,9 +49,7 @@ window.onload = function() {
     
     // extend functionality when click to #button-cart button
     // We just copy the method but on Success we will add check for json['error_nuvei']
-    $('#button-cart').on('click', function(event) {
-        event.stopImmediatePropagation();
-        
+    $('#button-cart').off('click').on('click', function(event) {
         $.ajax({
             url: 'index.php?route=checkout/cart/add',
             type: 'post',
