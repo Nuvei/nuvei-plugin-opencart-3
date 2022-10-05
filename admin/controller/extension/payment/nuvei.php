@@ -843,7 +843,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             }
 
             // can we show Void button
-            if(!in_array($nuvei_last_trans['transactionType'], array('Refund', 'Credit', 'Void'))
+            if(in_array($nuvei_last_trans['transactionType'], array('Auth', 'Settle'))
                 && "cc_card" == $nuvei_last_trans['paymentMethod']
             ) {
                 $nuveiAllowVoidBtn = 1;
@@ -851,7 +851,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             if ($this->data['order_status_id']  == $this->config->get(NUVEI_SETTINGS_PREFIX . 'canceled_status_id')) {
                 $nuveiAllowVoidBtn = 0;
             }
-
+            
             // can we show Settle button
             if('Auth' == $nuvei_last_trans['transactionType']
                 && 'approved' == $nuvei_last_trans['status']
@@ -869,16 +869,10 @@ class ControllerExtensionPaymentNuvei extends Controller
 
         exit(json_encode([
             'nuveiAllowRefundBtn'           => $nuveiAllowRefundBtn,
-//            'nuveiAllowRefundBtn'           => $this->session->data['nuveiAllowRefundBtn'],
             'nuveiAllowVoidBtn'             => $nuveiAllowVoidBtn,
-//            'nuveiAllowVoidBtn'             => $this->session->data['nuveiAllowVoidBtn'],
             'nuveiAllowSettleBtn'           => $nuveiAllowSettleBtn,
-//            'nuveiAllowSettleBtn'           => $this->session->data['nuveiAllowSettleBtn'],
-//            'nuveiRefunds'                  => json_encode($this->session->data['nuveiRefunds']),
             'nuveiRefunds'                  => json_encode($nuvei_refunds),
             'remainingTotalCurr'            => $remainingTotalCurr, // formated
-//            'remainingTotalCurr'            => $this->session->data['nuveiRemainingTotalCurr'],
-//            'isNuveiOrder'                  => $this->session->data['isNuveiOrder'],
             'isNuveiOrder'                  => $isNuveiOrder,
             'orderTotal'                    => round($nuvei_remaining_total, 2),
             'currSymbolRight'               => $this->currency->getSymbolRight($this->data['currency_code']),

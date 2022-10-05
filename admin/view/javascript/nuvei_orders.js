@@ -133,13 +133,13 @@ function loadNuveiExtras() {
 		}
 
 		// 1.2.set Void btn
-		if('1' == nuveiVars.nuveiAllowVoidBtn) {
-			scVoidSettleButton = '<button class="btn btn-danger btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmCancel +'\', \'void\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnVoid +'</button>';
+		if(1 == nuveiVars.nuveiAllowVoidBtn) {
+			scVoidSettleButton += '<button class="btn btn-danger btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmCancel +'\', \'void\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnVoid +'</button>';
 		}
 
 		// 1.3.set Settle btn
 		if('1' == nuveiVars.nuveiAllowSettleBtn) {
-			scVoidSettleButton = '<button class="btn btn-success btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmSettle +'\', \'settle\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnSettle +'</button>';
+			scVoidSettleButton += '<button class="btn btn-success btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmSettle +'\', \'settle\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnSettle +'</button>';
 		}
 
 		// 1.4.place buttons
