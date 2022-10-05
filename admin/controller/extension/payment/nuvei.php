@@ -843,7 +843,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             }
 
             // can we show Void button
-            if(in_array($nuvei_last_trans['transactionType'], array('Auth', 'Settle'))
+            if(in_array($nuvei_last_trans['transactionType'], array('Auth', 'Settle', 'Sale'))
                 && "cc_card" == $nuvei_last_trans['paymentMethod']
             ) {
                 $nuveiAllowVoidBtn = 1;
