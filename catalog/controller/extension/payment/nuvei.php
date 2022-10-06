@@ -684,9 +684,6 @@ class ControllerExtensionPaymentNuvei extends Controller
 			'currency'          => $this->order_info['currency_code'],
 			
 			'urlDetails'        => array(
-//				'successUrl'        => $this->url->link(NUVEI_CONTROLLER_PATH . '/success'),
-//				'failureUrl'        => $this->url->link(NUVEI_CONTROLLER_PATH . '/fail'),
-//				'pendingUrl'        => $this->url->link(NUVEI_CONTROLLER_PATH . '/success'),
 				'backUrl'			=> $this->url->link('checkout/checkout', '', true),
 				'notificationUrl'   => $this->url->link(NUVEI_CONTROLLER_PATH . '/callback'),
 			),
@@ -694,8 +691,6 @@ class ControllerExtensionPaymentNuvei extends Controller
 			'userDetails'       => $this->order_addresses['billingAddress'],
 			'billingAddress'	=> $this->order_addresses['billingAddress'],
             'shippingAddress'   => $this->order_addresses['shippingAddress'],
-			
-//			'paymentOption'		=> array('card' => array('threeD' => array('isDynamic3D' => 1))),
 			'transactionType'	=> $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action'],
 		);
 		
@@ -957,6 +952,10 @@ class ControllerExtensionPaymentNuvei extends Controller
         $params                 = [];
         $nuvei_rebilling_data   = [];
         
+        if(!isset($this->order_info)) {
+            $this->order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
+        }
+        
         // default rebiling parameters
 //        $params['isRebilling']                                        = 1;
 //        $params['paymentOption']['card']['threeD']['isDynamic3D']     = 1;
@@ -975,19 +974,22 @@ class ControllerExtensionPaymentNuvei extends Controller
                     continue;
                 }
                 
-                $recurring_amount = round(
+                $recurring_amount_base = $data['recurring']['price'] * $data['quantity'];
+                
+                $recurring_amount = $this->get_price(
                     $this->tax->calculate(
-                        $data['recurring']['price'] * $data['quantity'],
+                        $recurring_amount_base,
                         $data['tax_class_id'],
                         $this->config->get('config_tax')
-                    ),
-                    2
+                    )
                 );
                 
                 $recurring_amount_formatted = $this->currency->format(
-                    $recurring_amount,
+                    $recurring_amount_base,
                     $this->session->data['currency']
                 );
+                
+//                NUVEI_CLASS::create_log($this->plugin_settings, $this->session->data, 'Session data');
                 
                 $nuvei_rebilling_data = [
                     'product_id'        => $data['product_id'],
@@ -1274,15 +1276,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         // On Success
         $msg = $this->language->get('Subscription was created. ') . '<br/>'
             . $this->language->get('Subscription ID: ') . $resp['subscriptionId'] . '.<br/>' 
-//            . $this->language->get('Recurring amount: ') . $params['currency'] . ' ' . $subscr_data['recurring_amount'];
-            . $this->language->get('Recurring amount: ') . $this->currency->format(
-                $this->tax->calculate(
-                    $subscr_data['recurring_amount'],
-                    $this->order_info['tax_class_id'],
-                    $this->config->get('config_tax')
-                ),
-                $this->session->data['currency']
-            );
+            . $this->language->get('Recurring amount: ') . $subscr_data['rec_am_formatted'];
 
         $this->model_checkout_order->addOrderHistory(
             $this->order_info['order_id'],
