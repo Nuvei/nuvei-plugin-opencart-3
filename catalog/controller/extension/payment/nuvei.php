@@ -974,22 +974,24 @@ class ControllerExtensionPaymentNuvei extends Controller
                     continue;
                 }
                 
+                // get recurring amount for all items
                 $recurring_amount_base = $data['recurring']['price'] * $data['quantity'];
                 
-                $recurring_amount = $this->get_price(
-                    $this->tax->calculate(
-                        $recurring_amount_base,
-                        $data['tax_class_id'],
-                        $this->config->get('config_tax')
-                    )
+                // add taxes
+                $rec_am_base_taxes = $this->tax->calculate(
+                    $recurring_amount_base,
+                    $data['tax_class_id'],
+                    $this->config->get('config_tax')
                 );
                 
+                // convert the amount with the taxes to the Store currency
+                $recurring_amount = $this->get_price($rec_am_base_taxes);
+                
+                // format base amount with taxes by the Store currency
                 $recurring_amount_formatted = $this->currency->format(
-                    $recurring_amount_base,
+                    $rec_am_base_taxes,
                     $this->session->data['currency']
                 );
-                
-//                NUVEI_CLASS::create_log($this->plugin_settings, $this->session->data, 'Session data');
                 
                 $nuvei_rebilling_data = [
                     'product_id'        => $data['product_id'],
@@ -1464,21 +1466,22 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $this->get_order_info_by_dmn();
         
-        $rec_amount = (float) NUVEI_CLASS::get_param('totalAmount');
-
+        // in order_recurring_transaction table we save the total in default value
+        // but we get it in Order currency
+        $rec_amount_default     = (float) NUVEI_CLASS::get_param('totalAmount') / $this->order_info['currency_value'];
+        $rec_amount_formatted   = $this->currency->format(
+            $rec_amount_default,
+            NUVEI_CLASS::get_param('currency')
+        );
+        
+//        NUVEI_CLASS::create_log($this->plugin_settings, $rec_amount_default);
+//        NUVEI_CLASS::create_log($this->plugin_settings, $rec_amount_formatted);
+        
         $message = $this->language->get('Subscription Payment was made.') . '<br/>'
             . $this->language->get('Status: ') . $req_status . '<br/>'
             . $this->language->get('Plan ID: ') . (int) NUVEI_CLASS::get_param('planId') . '<br/>'
             . $this->language->get('Subscription ID: ') . (int) NUVEI_CLASS::get_param('subscriptionId') . '<br/>'
-//            . $this->language->get('Amount: ') . $this->order_info['currency_code'] . ' ' . $rec_amount . '<br/>'
-            . $this->language->get('Amount: ') . $this->currency->format(
-                $this->tax->calculate(
-                    $rec_amount,
-                    $this->order_info['tax_class_id'],
-                    $this->config->get('config_tax')
-                ),
-                $this->session->data['currency']
-            ) . '<br/>'
+            . $this->language->get('Amount: ') . $rec_amount_formatted . '<br/>'
             . $this->language->get('TransactionId: ') . $trans_id;
 
         NUVEI_CLASS::create_log($this->plugin_settings, $this->order_info['order_status_id'], 'order status when get subscriptionPayment');
@@ -1496,9 +1499,6 @@ class ControllerExtensionPaymentNuvei extends Controller
             . "WHERE order_id = ". (int) $this->order_info['order_id']
         );
 
-        // order_recurring_transaction need the total in default value
-        $rec_amount = $rec_amount / $this->order_info['currency_value'];
-        
         switch(strtolower($req_status)) {
             case 'approved':
                 $trans_type = 1;
@@ -1517,7 +1517,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->db->query(
             "INSERT INTO `" . DB_PREFIX . "order_recurring_transaction` "
             . "(`order_recurring_id`, `reference`, `type`, `amount`, `date_added`) "
-            . "VALUES (". $order_rec->row['order_recurring_id'] .", ". $trans_id .", ". $trans_type .", ". $rec_amount .", NOW())"
+            . "VALUES (". $order_rec->row['order_recurring_id'] .", ". $trans_id .", "
+                . $trans_type .", ". $rec_amount_default .", NOW())"
         );
 
         $this->return_message('DMN received.');

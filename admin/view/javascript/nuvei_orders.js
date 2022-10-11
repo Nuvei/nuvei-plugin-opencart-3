@@ -15,7 +15,7 @@ function scOrderActions(confirmQusetion, action, orderId) {
 
 		if(action == 'refund' || action == 'refundManual') { 
 			if(!reg.test(refAm) || isNaN(refAm) || refAm <= 0) {
-				alert(nuveiVars.refundAmountError);
+				alert(nuveiVars.nuveiRefundAmountError);
 				return;
 			}
 		}
@@ -207,7 +207,7 @@ function loadNuveiExtras() {
 
 				+ '<tr>'
 					+ '<td class="text-right" colspan="4"><strong>'+ nuveiVars.nuveiRemainingTotal +'</strong></td>'
-					+ '<td class="text-right"><strong id="nuveiRemainigTotal">'+ nuveiVars.nuveiRemainingTotalCurr +'</strong></td>'
+					+ '<td class="text-right"><strong id="nuveiRemainigTotal">'+ nuveiVars.remainingTotalCurr +'</strong></td>'
 				+ '</tr>'
 			);
 		}
@@ -251,29 +251,8 @@ $(function(){
                 return;
             }
             
-            nuveiVars.refundAmountError             = resp.nuveiRefundAmountError;
-            nuveiVars.nuveiUnexpectedError          = resp.nuveiUnexpectedError;
-            nuveiVars.nuveiOrderConfirmDelRefund    = resp.nuveiOrderConfirmDelRefund;
-            nuveiVars.nuveiCreateRefund             = resp.nuveiCreateRefund;
-            nuveiVars.nuveiOrderConfirmRefund       = resp.nuveiOrderConfirmRefund;
-            nuveiVars.nuveiBtnManualRefund          = resp.nuveiBtnManualRefund;
-            nuveiVars.nuveiBtnRefund                = resp.nuveiBtnRefund;
-            nuveiVars.nuveiBtnVoid                  = resp.nuveiBtnVoid;
-            nuveiVars.nuveiOrderConfirmCancel       = resp.nuveiOrderConfirmCancel;
-            nuveiVars.nuveiBtnSettle                = resp.nuveiBtnSettle;
-            nuveiVars.nuveiOrderConfirmSettle       = resp.nuveiOrderConfirmSettle;
-            nuveiVars.nuveiMoreActions              = resp.nuveiMoreActions;
-            nuveiVars.nuveiAllowRefundBtn           = resp.nuveiAllowRefundBtn;
-            nuveiVars.nuveiAllowVoidBtn             = resp.nuveiAllowVoidBtn;
-            nuveiVars.nuveiAllowSettleBtn           = resp.nuveiAllowSettleBtn;
-            nuveiVars.nuveiRefunds                  = JSON.parse(resp.nuveiRefunds);
-            nuveiVars.nuveiRefundId                 = resp.nuveiRefundId;
-            nuveiVars.nuveiDate                     = resp.nuveiDate;
-            nuveiVars.nuveiRemainingTotal           = resp.nuveiRemainingTotal;
-            nuveiVars.nuveiRemainingTotalCurr       = resp.remainingTotalCurr;
-            nuveiVars.orderTotal                    = resp.orderTotal;
-            nuveiVars.currSymbolRight               = resp.currSymbolRight;
-            nuveiVars.currSymbolLeft                = resp.currSymbolLeft;
+            nuveiVars               = {...nuveiVars, ...resp};
+            nuveiVars.nuveiRefunds  = JSON.parse(nuveiVars.nuveiRefunds);
 
             loadNuveiExtras();
             return;

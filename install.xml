@@ -101,10 +101,10 @@
         <!-- load in controller Nuvei translations -->
         <operation>
             <search><![CDATA[
-                $data['text_order'] = sprintf($this->language->get('text_order'), $this->request->get['order_id']);
+                $data['text_ip_add'] = sprintf($this->language->get('text_ip_add'), $this->request->server['REMOTE_ADDR']);
             ]]></search>
             
-            <add position="after"><![CDATA[
+            <add position="before"><![CDATA[
                 # Nuvei Modification
 				require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
 					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'sale_order_3.php';
