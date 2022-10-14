@@ -192,10 +192,6 @@ class ControllerExtensionPaymentNuvei extends Controller
                 $this->get_nuvei_vars();
                 exit;
                 
-            case 'getNuveiPlans':
-                $this->get_nuvei_plans();
-                exit;
-                
             case 'refund':
                 $this->order_refund();
                 exit;
@@ -785,15 +781,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         return '';
     }
-    
-    /*
-    private function get_nuvei_plans()
-    {
-        exit(json_encode([
-            'status' => 0
-        ]));
-    }
-     */
     
     private function get_nuvei_vars()
     {
