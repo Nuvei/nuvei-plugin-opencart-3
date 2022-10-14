@@ -418,21 +418,6 @@
 
                             <!-- tools -->
                             <div class="tab-pane fade" id="nuvei_tools">
-                                <!-- Download Payment Plans -->
-                                <div class="form-group">
-                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_donwload_p_plans'); ?></label>
-                                    <div class="col-lg-10">
-                                        <button type="button" onclick="downloadNuveiPlans()" class="btn btn-default" id="nuvei_dl_plans_btn">
-                                            <i class="fa fa-download"></i>
-                                        </button>
-
-                                        <span class="help-block" id="nuvei_last_dl_data">
-                                            <?php if(!empty($paymentPlanJsonDlDate)):
-                                                echo $this->language->get('text_last_download') . ' ' . $paymentPlanJsonDlDate;
-                                            endif; ?></span>
-                                    </div>
-                                </div>
-
                                 <!-- DMN URL -->
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_dmn_url'); ?></label>
@@ -467,22 +452,5 @@
         </div>
     </div>
 </div>
-
-<script>
-    function downloadNuveiPlans() {
-        jQuery.ajax({
-            type: "POST",
-            dataType: 'json',
-            url: window.location.href,
-            data: { action : 'getNuveiPlans' },
-        })
-        .done(function(resp){
-            console.log(resp)
-        })
-        .fail(function(resp){
-            console.error(resp)
-        });
-    }
-</script>
 
 <?= $data['footer']; ?>
