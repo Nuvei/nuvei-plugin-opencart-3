@@ -23,12 +23,22 @@ class ControllerExtensionPaymentNuvei extends Controller
 	
     public function install()
     {
-        
+        // remove the plugin upgrade cookie if exists
+        if (!empty($_COOKIE['nuvei_plugin_msg'])) {
+            unset($_COOKIE['nuvei_plugin_msg']);
+            setcookie('nuvei_plugin_msg', null, -1, '/'); 
+            return true;
+        }
     }
     
     public function uninstall()
     {
-        
+        // remove the plugin upgrade cookie if exists
+        if (!empty($_COOKIE['nuvei_plugin_msg'])) {
+            unset($_COOKIE['nuvei_plugin_msg']);
+            setcookie('nuvei_plugin_msg', null, -1, '/'); 
+            return true;
+        }
     }
     
 	public function index()

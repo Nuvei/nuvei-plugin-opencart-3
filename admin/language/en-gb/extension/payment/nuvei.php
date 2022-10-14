@@ -41,7 +41,7 @@ $_['text_change_order_status'] = 'Change the Order status to Pending on successf
 
 $_['text_no_github_plugin_version']     = 'Nuvei message - can not find the plugin version into github changelog file.';
 $_['text_github_plugin_same_version']   = 'Git version is same as the current plugin version.';
-$_['text_github_new_plugin_version']    = 'There is <a href="https://github.com/SafeChargeInternational/nuvei_checkout_opencart3/blob/main/CHANGELOG.md">newer version</a> for Nuvei Checkout plugin.';
+$_['text_github_new_plugin_version']    = 'There is <a href="https://github.com/SafeChargeInternational/nuvei_checkout_opencart3/blob/main/CHANGELOG.md" target="_blank">newer version</a> for Nuvei Checkout plugin.';
 
 // Entry					
 $_['entry_merchantId']      = 'Merchant ID:';

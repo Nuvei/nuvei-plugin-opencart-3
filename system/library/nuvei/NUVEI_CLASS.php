@@ -8,7 +8,7 @@
  * @author Nuvei
  */
 
-define('NUVEI_PLUGIN_V',            '1.1');
+define('NUVEI_PLUGIN_V',            '1.0');
 define('NUVEI_PLUGIN_CODE',         'nuvei');
 define('NUVEI_PLUGIN_TITLE',        'Nuvei');
 

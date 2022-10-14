@@ -77,7 +77,8 @@
             
 			<add position="before"><![CDATA[
                 # Nuvei Modification
-				$this->document->addScript('view/javascript/nuvei_version_checker.js');
+                require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'admin_header.php';
                 # /Nuvei Modification
             ]]></add>
         </operation>
