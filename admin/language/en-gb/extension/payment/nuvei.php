@@ -7,7 +7,7 @@ $_['text_extension']    = 'Extensions';
 $_['text_payment']      = 'Payment';
 $_['text_success']		= 'Success: You have modified the Nuvei details.';
 $_['text_edit']         = 'Edit Nuvei Checkout extension';
-$_['text_nuvei']        = '<a href="http://nuvei.com/" target="_blank"><img src="view/image/payment/nuvei.png" alt="Nuvei" title="Nuvei" style="border: 1px solid #EEEEEE;" /></a>';
+$_['text_nuvei']        = '<a href="http://nuvei.com/" target="_blank"><img src="view/image/payment/nuvei.png" alt="Nuvei" title="Nuvei" /></a>';
 	
 // Settings tabs
 $_['text_general_tab']  = 'General';
