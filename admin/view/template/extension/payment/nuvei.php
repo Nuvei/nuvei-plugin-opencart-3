@@ -403,15 +403,15 @@
                                         <span class="help-block"><?= $this->language->get('text_sdk_transl_help'); ?></span>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Rebilling Plan ID -->
-                            <div class="form-group">
-                                <label class="col-sm-2 control-label"><?= $this->language->get('entry_rebilling_plan_id'); ?></label>
-                                <div class="col-sm-10">
-                                    <input type="text" name="<?= NUVEI_SETTINGS_PREFIX; ?>plan_id" value="<?= @$data[NUVEI_SETTINGS_PREFIX . 'plan_id']; ?>" class="form-control" pattern="[0-9]+" required="" />
-                                    
-                                    <span class="help-block"><?= $this->language->get('text_plan_id_help'); ?></span>
+                                
+                                <!-- Rebilling Plan ID -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_rebilling_plan_id'); ?></label>
+                                    <div class="col-sm-10">
+                                        <input type="text" name="<?= NUVEI_SETTINGS_PREFIX; ?>plan_id" value="<?= @$data[NUVEI_SETTINGS_PREFIX . 'plan_id']; ?>" class="form-control" pattern="[0-9]+" required="" />
+
+                                        <span class="help-block"><?= $this->language->get('text_plan_id_help'); ?></span>
+                                    </div>
                                 </div>
                             </div>
                             <!-- /advanced settings -->
