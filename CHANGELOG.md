@@ -2,6 +2,12 @@
 
 ---
 
+# 1.2
+```
+    * Fix for the missing insufficient funds message.
+    * Fix for the wrong Nuvei Documentation links into the plugin settings.
+```
+
 # 1.1
 ```
     * Enabled OC recurring support.

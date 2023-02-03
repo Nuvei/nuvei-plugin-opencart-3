@@ -215,10 +215,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         NUVEI_CLASS::create_log($this->plugin_settings, @$_REQUEST, 'DMN request');
         
         ### Manual stop DMN is possible only in test mode
-//        if('yes' == $_SESSION['nuvei_test_mode']) {
-//            NUVEI_CLASS::create_log($this->plugin_settings, http_build_query(@$_REQUEST), 'DMN request query');
-//            die('manually stoped');
-//        }
+        NUVEI_CLASS::create_log($this->plugin_settings, http_build_query(@$_REQUEST), 'DMN request query');
+        die('manually stoped');
         ### Manual stop DMN END
         
         if(!$this->validate_dmn()) {
@@ -227,9 +225,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $trans_type             = NUVEI_CLASS::get_param('transactionType', FILTER_SANITIZE_STRING);
         $trans_id               = (int) NUVEI_CLASS::get_param('TransactionID');
-        $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
-        $dmnType                = NUVEI_CLASS::get_param('dmnType');
-        $client_request_id      = NUVEI_CLASS::get_param('clientRequestId');
+//        $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
+//        $dmnType                = NUVEI_CLASS::get_param('dmnType');
+//        $client_request_id      = NUVEI_CLASS::get_param('clientRequestId');
         $req_status             = $this->get_request_status();
 		
         // check for Subscription State DMN

@@ -29,11 +29,11 @@ $_['text_btn_pm']           = 'Shows the payment method';
 $_['text_log_level_help']   = '0 for "No logging"';
 $_['text_last_download']    = 'Last download';
 
-$_['text_sdk_transl_help']  = 'This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples <a href="https://docs.nuvei.com/documentation/accept-payment/checkout-2/ui-customization/#text-and-translation">check the Documentation</a>.';
+$_['text_sdk_transl_help']  = 'This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/ui-customization/#text-and-translation" target="_blank">check the Documentation</a>.';
 
-$_['text_block_cards_help'] = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/checkout-2/payment-customization/#card-processing" target="_blank"> check the Documentation.</a>';
+$_['text_block_cards_help'] = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/payment-customization/#Card_Processing" target="_blank"> check the Documentation.</a>';
 
-$_['text_block_pms_help']   = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/checkout-2/payment-customization/#apm-whitelisting-blacklisting" target="_blank"> check the Documentation.</a>';
+$_['text_block_pms_help']   = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/payment-customization/#apm-whitelisting-blacklisting" target="_blank"> check the Documentation.</a>';
 
 $_['text_plan_id_help']     = 'For Rebilling you need at least one Rebilling Plan. Creat it, and get its number from the CPanel.';
 

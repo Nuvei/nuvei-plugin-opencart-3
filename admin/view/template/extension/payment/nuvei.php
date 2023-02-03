@@ -316,6 +316,8 @@
                                                 <?php endforeach;
                                             endif; ?>
                                         </select>
+                                        
+                                        <span class="help-block"><?= $this->language->get('text_block_pms_help'); ?></span>
                                     </div>
                                 </div>
 
