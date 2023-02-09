@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>Nuvei Checkout Modifications</name>
+    <code>Nuvei</code>
+    <version>1.2</version>
+    <author>Nuvei</author>
+    <link>https://www.nuvei.com/</link>
+    
+    <!-- append Nuvei Checkout SDK script to the header -->
+    <file path="catalog/controller/common/header.php">
+        <operation>
+            <search><![CDATA[
+                $data['scripts'] = $this->document->getScripts('header');
+            ]]></search>
+            
+			<add position="before"><![CDATA[
+                # Nuvei Modification
+				require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'catalog_header.php';
+                # /Nuvei Modification
+            ]]></add>
+        </operation>
+    </file>
+    
+    <!-- prevent combining of product with rebilling plan with other products part -->
+    <file path="catalog/controller/checkout/cart.php">
+        <operation>
+            <search><![CDATA[
+                if (!$json) {
+            ]]></search>
+            
+			<add position="before"><![CDATA[
+                # Nuvei Modification
+				require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'catalog_cart.php';
+                # /Nuvei Modification
+            ]]></add>
+        </operation>
+        
+        <!-- if we set Nuvei Recurring Erro with above mod, remove the redirect -->
+        <operation>
+            <search><![CDATA[
+                $json['redirect'] = str_replace('&amp;', '&', $this->url->link('product/product', 'product_id=' . $this->request->post['product_id']));
+            ]]></search>
+            
+			<add position="replace"><![CDATA[
+                # Nuvei Modification
+				require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'catalog_cart_2.php';
+                # /Nuvei Modification
+            ]]></add>
+        </operation>
+    </file>
+    
+    <!-- remove all payment providers except Nuvei if there is product with Nuvei Rebilling -->
+    <file path="catalog/controller/checkout/payment_method.php">
+        <operation>
+            <search><![CDATA[
+                $this->response->setOutput($this->load->view('checkout/payment_method', $data));
+            ]]></search>
+            
+			<add position="before"><![CDATA[
+                # Nuvei Modification
+				require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'catalog_payment_method.php';
+                # /Nuvei Modification
+            ]]></add>
+        </operation>
+    </file>
+    
+    <!-- append Nuvei JS file to check for new version -->
+    <file path="admin/controller/common/header.php">
+        <operation>
+            <search><![CDATA[
+                $data['scripts'] = $this->document->getScripts();
+            ]]></search>
+            
+			<add position="before"><![CDATA[
+                # Nuvei Modification
+                require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'admin_header.php';
+                # /Nuvei Modification
+            ]]></add>
+        </operation>
+    </file>
+	
+	<!-- modify file again to preview net Total (after refunds) in the Orders list -->
+    <file path="admin/controller/sale/order.php">
+        <operation>
+            <search><![CDATA[
+                if (isset($this->error['warning'])) {
+            ]]></search>
+            
+            <add position="before"><![CDATA[
+                # Nuvei Modification
+                require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'sale_order_2.php';
+                # /Nuvei Modification
+            ]]></add>
+        </operation>
+        
+        <!-- load in controller Nuvei translations -->
+        <operation>
+            <search><![CDATA[
+                $data['text_ip_add'] = sprintf($this->language->get('text_ip_add'), $this->request->server['REMOTE_ADDR']);
+            ]]></search>
+            
+            <add position="before"><![CDATA[
+                # Nuvei Modification
+				require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR  . 'nuvei' . DIRECTORY_SEPARATOR 
+					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'sale_order_3.php';
+				# /Nuvei Modification
+            ]]></add>
+        </operation>
+        
+        <!-- In the Order Info, History table use full date for the comments -->
+        <operation>
+            <search><![CDATA[
+                'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added']))
+            ]]></search>
+            
+            <add position="replace"><![CDATA[
+                # Nuvei Modification
+				'date_added' => date($this->language->get('datetime_format'), strtotime($result['date_added']))
+				# Nuvei Modification END
+            ]]></add>
+        </operation>
+    </file>
+</modification>
