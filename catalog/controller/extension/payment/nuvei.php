@@ -101,8 +101,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             'autoOpenPM'             => (bool) $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_expand_pms'],
             'logLevel'               => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_log_level'],
             'i18n'                   => json_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_transl'], true),
-            'billingAddress'         => $order_data['billingAddress'],
-            'userData'               => ['billingAddress' => $order_data['billingAddress']],
+//            'billingAddress'         => $order_data['billingAddress'],
+//            'userData'               => ['billingAddress' => $order_data['billingAddress']],
         ];
         
         $data['action'] = $this->url->link(NUVEI_CONTROLLER_PATH . '/process_payment')
@@ -134,7 +134,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->load->model('checkout/order');
         $this->language->load(NUVEI_CONTROLLER_PATH);
         
-        NUVEI_CLASS::create_log($this->plugin_settings, 'success page');
+        NUVEI_CLASS::create_log($this->plugin_settings, 'Success page');
+        
+        $this->session->data['nuvei_last_oo_details'] = [];
         
 		if(!empty($this->request->get['order_id'])) {
 			$order_id = (int) $this->request->get['order_id'];
@@ -215,42 +217,51 @@ class ControllerExtensionPaymentNuvei extends Controller
         NUVEI_CLASS::create_log($this->plugin_settings, @$_REQUEST, 'DMN request');
         
         ### Manual stop DMN is possible only in test mode
-        NUVEI_CLASS::create_log($this->plugin_settings, http_build_query(@$_REQUEST), 'DMN request query');
-        die('manually stoped');
+//        NUVEI_CLASS::create_log($this->plugin_settings, http_build_query(@$_REQUEST), 'DMN manually stopped. Request query');
+//        die('manually stoped');
         ### Manual stop DMN END
         
-        if(!$this->validate_dmn()) {
-            $this->return_message('DMN report: You receive DMN from not trusted source. The process ends here.');
+        if ('CARD_TOKENIZATION' == NUVEI_CLASS::get_param('type')) {
+            $this->return_message('CARD_TOKENIZATION DMN, wait for the next one.');
         }
         
-        $trans_type             = NUVEI_CLASS::get_param('transactionType', FILTER_SANITIZE_STRING);
-        $trans_id               = (int) NUVEI_CLASS::get_param('TransactionID');
-//        $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
-//        $dmnType                = NUVEI_CLASS::get_param('dmnType');
-//        $client_request_id      = NUVEI_CLASS::get_param('clientRequestId');
-        $req_status             = $this->get_request_status();
-		
-        // check for Subscription State DMN
-        $this->process_subs_state();
+        $req_status = $this->get_request_status();
         
         if(empty($req_status)) {
             $this->return_message('DMN report: the Status parameter is empty.');
 		}
         
-        if (empty($trans_id)) {
-            $this->return_message('DMN error - The TransactionID is empty!');
-		}
+        if ('pending' == strtolower($req_status)) {
+            $this->return_message('Pending DMN, wait for the next one.');
+        }
+        
+        if(!$this->validate_dmn()) {
+            $this->return_message('DMN report: You receive DMN from not trusted source. The process ends here.');
+        }
+        
+        $trans_type = NUVEI_CLASS::get_param('transactionType', FILTER_SANITIZE_STRING);
+//        $trans_id   = (int) NUVEI_CLASS::get_param('TransactionID');
+//        $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
+//        $dmnType                = NUVEI_CLASS::get_param('dmnType');
+//        $client_request_id      = NUVEI_CLASS::get_param('clientRequestId');
+        
+        // check for Subscription State DMN
+        $this->process_subs_state();
+        
+//        if (empty($trans_id)) {
+//            $this->return_message('DMN error - The TransactionID is empty!');
+//		}
         
         // check for Subscription Payment DMN
         $this->process_subs_payment();
         
-        if(!$trans_type) {
-            $this->return_message('DMN report: Transaction Type is empty');
-		}
+//        if(!$trans_type) {
+//            $this->return_message('DMN report: Transaction Type is empty');
+//		}
 		
-		if('pending' == strtolower($req_status)) {
-            $this->return_message('DMN status is Pending. Wait for another status.');
-		}
+//		if('pending' == strtolower($req_status)) {
+//            $this->return_message('DMN status is Pending. Wait for another status.');
+//		}
 		
         $this->get_order_info_by_dmn();
         
@@ -665,9 +676,32 @@ class ControllerExtensionPaymentNuvei extends Controller
     {
         NUVEI_CLASS::create_log($this->plugin_settings, 'open_order()');
         
-        # try to update Order
-		$resp = $this->update_order();
+        $resp                   = [];
+        $nuvei_last_oo_details  = isset($this->session->data['nuvei_last_oo_details'])
+            ? $this->session->data['nuvei_last_oo_details'] : [];
+        // rebiling parameters
+        $rebilling_params       = $this->preprare_rebilling_params();
         
+        NUVEI_CLASS::create_log($this->plugin_settings, $nuvei_last_oo_details);
+        
+        # try to update Order
+        if (! (empty($this->session->data['nuvei_last_oo_details']['userTokenId'])
+            && !empty($rebilling_params['merchantDetails']['customField3'])
+        ) ) {
+            $resp = $this->update_order();
+        }
+        else {
+            NUVEI_CLASS::create_log(
+                $this->plugin_settings, 
+                [
+                    'userTokenId'   => @$this->session->data['nuvei_last_oo_details']['userTokenId'],
+                    'customField3'  => @$rebilling_params['merchantDetails']['customField3'],
+                ],
+                'Go directly to openOrder', 
+                'DEBUG'
+            );
+        }
+		
         if (!empty($resp['status']) && 'SUCCESS' == $resp['status']) {
 			return $resp;
 		}
@@ -702,11 +736,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         
         # use or not UPOs
-        // rebiling parameters
-        $rebilling_params = $this->preprare_rebilling_params();
-
         // in case there is a Product with a Payment Plan
-        if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
+//        if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
+        if(!empty($rebilling_params['merchantDetails']['customField3'])) {
             $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
         }
         elseif(1 == $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_upos'] 
@@ -740,6 +772,10 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->session->data['nuvei_last_oo_details']['orderId']            = $resp['orderId'];
         $this->session->data['nuvei_last_oo_details']['billingAddress']['country']
             = $oo_params['billingAddress']['country'];
+        
+        if (!empty($oo_params['userTokenId'])) {
+            $this->session->data['nuvei_last_oo_details']['userTokenId'] = $oo_params['userTokenId'];
+        }
         
         $oo_params['sessionToken'] = $resp['sessionToken'];
 		
@@ -790,15 +826,15 @@ class ControllerExtensionPaymentNuvei extends Controller
         // rebiling parameters
         $rebilling_params = $this->preprare_rebilling_params();
         // when will use UPOs
-        if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
-            $params['userTokenId'] = $this->order_addresses['billingAddress']['email'];
-        }
-        elseif($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_upos'] == 1) {
-            $params['userTokenId'] = $this->order_addresses['billingAddress']['email'];
-        }
-        else {
-            $params['userTokenId'] = null;
-        }
+//        if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
+//            $params['userTokenId'] = $this->order_addresses['billingAddress']['email'];
+//        }
+//        elseif($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_upos'] == 1) {
+//            $params['userTokenId'] = $this->order_addresses['billingAddress']['email'];
+//        }
+//        else {
+//            $params['userTokenId'] = null;
+//        }
         
         $params = array_merge_recursive($params, $rebilling_params);
         
@@ -861,22 +897,43 @@ class ControllerExtensionPaymentNuvei extends Controller
         );
     }
 
+    /**
+     * If this controller is called via Ajax, this is a call after the client
+     * clicked on SDK Pay button.
+     * Here we will make last check for product quality.
+     */
 	private function ajax_call()
     {
 		NUVEI_CLASS::create_log($this->plugin_settings, 'ajax_call()');
         
+        $this->load->model('catalog/product');
+        
+        $products = $this->cart->getProducts();
+        
+        foreach ($products as $product) {
+            $prod_id        = $product['product_id'];
+            $product_data   = $this->model_catalog_product->getProduct($prod_id);
+            
+            if ($product_data['quantity'] < 1) {
+                exit(json_encode(array(
+                    'status'		=> 'error',
+                    'msg'           => $this->language->get('error_product_quantity')
+                )));
+            }
+            
+            NUVEI_CLASS::create_log($this->plugin_settings, $product_data, 'Cart $product_data');
+        }
+        
         $oo_data = $this->open_order();
 		
 		if(empty($oo_data)) {
-			echo json_encode(array('status' => 'error'));
-			exit;
+			exit(json_encode(array('status' => 'error')));
 		}
 		
-		echo json_encode(array(
+		exit(json_encode(array(
 			'status'		=> 'success',
 			'sessionToken'	=> $oo_data['sessionToken']
-		));
-		exit;
+		)));
 	}
 	
     /*
@@ -954,12 +1011,6 @@ class ControllerExtensionPaymentNuvei extends Controller
             $this->order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
         }
         
-        // default rebiling parameters
-//        $params['isRebilling']                                        = 1;
-//        $params['paymentOption']['card']['threeD']['isDynamic3D']     = 1;
-//        $params['paymentOption']['card']['threeD']['rebillFrequency'] = 0;
-//        $params['paymentOption']['card']['threeD']['rebillExpiry']    = date('Ymd', time());
-        
         # check for a product with a Payment Plan
         $rebilling_data = $this->cart->getRecurringProducts();
         
@@ -999,10 +1050,7 @@ class ControllerExtensionPaymentNuvei extends Controller
                 ];
             }
             
-            $params['isRebilling']                                        = 0;
-			$params['paymentOption']['card']['threeD']['rebillFrequency'] = 1;
-			$params['paymentOption']['card']['threeD']['rebillExpiry']    = gmdate('Ymd', strtotime('+5 years'));
-            $params['merchantDetails']['customField3']                    = json_encode($nuvei_rebilling_data);
+            $params['merchantDetails']['customField3'] = json_encode($nuvei_rebilling_data);
         }
         
         return $params;

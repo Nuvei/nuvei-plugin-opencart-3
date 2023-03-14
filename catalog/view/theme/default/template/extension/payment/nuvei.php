@@ -194,7 +194,14 @@
                     return;
                 }
                 
-                reject("<?= $this->language->get('nuvei_order_error'); ?>");
+                if (resp.hasOwnProperty('msg') && '' != resp.msg) {
+                    scFormFalse(resp.msg);
+                    reject();
+                    return;
+                }
+                
+                scFormFalse("<?= $this->language->get('nuvei_order_error'); ?>");
+                reject();
             });
             
         });

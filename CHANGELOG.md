@@ -2,6 +2,13 @@
 
 ---
 
+# 1.3
+```
+    * Fix for the case where updateOrder can not update the userTokenId parameter.
+    * Do not pass billing and user details to Checkout request.
+    * When cick on Pay button make a final check if product is available.
+```
+
 # 1.2
 ```
     * Fix for the missing insufficient funds message.

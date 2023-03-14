@@ -1,10 +1,12 @@
 <?php
 
-$_['error_insuff_funds']    = 'You have Insufficient funds, please go back and remove some of the items in your shopping cart, or use another card.';
+$_['error_insuff_funds']        = 'You have Insufficient funds, please go back and remove some of the items in your shopping cart, or use another card.';
 
-$_['error_nuvei_gateway']   = 'There is a problem with selected payment provider. Please, contact site Administrator and use another payment option!';
+$_['error_nuvei_gateway']       = 'There is a problem with selected payment provider. Please, contact site Administrator and use another payment option!';
 
-$_['error_nuvei_products']  = 'You can not combine simple Products and a Products with Payment Plan in same Order. Please, remove some of the products and continue!';
+$_['error_nuvei_products']      = 'You can not combine simple Products and a Products with Payment Plan in same Order. Please, remove some of the products and continue!';
+
+$_['error_product_quantity']    = 'Some of the products in the Cart is no more available.';
 
 $_['nuvei_attention']           = 'Attention!';
 $_['nuvei_go_to_step_2_error']  = 'You must confirm all steps starting from Step 2, to get correct APMs!';
