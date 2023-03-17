@@ -7,6 +7,7 @@
     * Fix for the case where updateOrder can not update the userTokenId parameter.
     * Do not pass billing and user details to Checkout request.
     * When cick on Pay button make a final check if product is available.
+    * Added Cancel Subscription button into Order details page > Nuvei Actions group.
 ```
 
 # 1.2

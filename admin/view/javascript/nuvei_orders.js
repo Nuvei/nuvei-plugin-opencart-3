@@ -8,20 +8,31 @@ nuveiVars.ajaxUrl = 'index.php?route=' + nuveiControllerPath + '&' + nuveiTokenN
 
 function scOrderActions(confirmQusetion, action, orderId) {
 	console.log(action);
+    
+    var reqData = {
+        orderId: orderId
+        ,action: action
+    };
 
 	if('refund' == action) {
-		var refAm	= $('#refund_amount').val().replace(',', '.');
+		var refAm   = $('#refund_amount').val().replace(',', '.');
 		var reg		= new RegExp(/^\d+(\.\d{1,2})?$/); // match integers and decimals
 
-		if(action == 'refund' || action == 'refundManual') { 
-			if(!reg.test(refAm) || isNaN(refAm) || refAm <= 0) {
-				alert(nuveiVars.nuveiRefundAmountError);
-				return;
-			}
-		}
+        if(!reg.test(refAm) || isNaN(refAm) || refAm <= 0) {
+            alert(nuveiVars.nuveiRefundAmountError);
+            return;
+        }
+        
+        reqData.amount = refAm;
 	}
+    
+    if ('cancelSubscr' != action) {
+        confirmQusetion += ' #' + orderId;
+    }
+    
+    confirmQusetion += '?';
 
-	if(confirm(confirmQusetion + ' #' + orderId + '?')) {
+	if(confirm(confirmQusetion)) {
 		var spinnerId = (action == 'void' ? 'void' : 'refund') + '_spinner';
 		$('#' + spinnerId).removeClass('hide');
 		
@@ -36,14 +47,10 @@ function scOrderActions(confirmQusetion, action, orderId) {
 			url: nuveiVars.ajaxUrl,
 			type: 'post',
 			dataType: 'json',
-			data: {
-				orderId: orderId
-				,action: action
-				,amount: $('#refund_amount').val()
-			}
+			data: reqData
 		})
 		.done(function(resp) {
-			console.log('done', resp)
+			console.log('done', resp);
 	
 			if(resp.hasOwnProperty('status')) {
 				if(resp.status == 1) {
@@ -115,9 +122,10 @@ function deleteManualRefund(id, amount, orderId) {
 
 function loadNuveiExtras() {
 	// 1.set the changes in Options table
-	var scPlaceOne          = $('#content .container-fluid .row .col-md-4:nth-child(3)').find('table tbody');
-    var scRefundBtnsHtml    = '';
-    var scVoidSettleButton  = '';
+	var scPlaceOne              = $('#content .container-fluid .row .col-md-4:nth-child(3)').find('table tbody');
+    var scRefundBtnsHtml        = '';
+    var scVoidSettleButton      = '';
+    var scCancelSubscrButton    = '';
 
 	if(scPlaceOne.length > 0) {
 		// 1.1.place Refund and Void buttons
@@ -137,13 +145,28 @@ function loadNuveiExtras() {
                     + '</span>';
             }
             
+            // add Cancel Subscription button
+            if (1 == nuveiVars.nuveiAllowCancelSubsBtn) {
+                scRefundBtnsHtml +=
+                    '<span class="input-group-btn" style="left: 2px;">'
+                        + '<button class="btn btn-danger btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.orderConfirmCancelSubscr +'\', \'cancelSubscr\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.btnCancelSubscr +'</button>'
+                    + '</span>';
+            }
+            
             scRefundBtnsHtml +=
                 '</div>';
 		}
-		// 1.2.set Void button only
-		else if(1 == nuveiVars.nuveiAllowVoidBtn) {
-			scVoidSettleButton += '<button class="btn btn-danger btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmCancel +'\', \'void\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnVoid +'</button>';
-		}
+        else {
+            // 1.2.set Void button only
+            if(1 == nuveiVars.nuveiAllowVoidBtn) {
+                scVoidSettleButton += '<button class="btn btn-danger btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmCancel +'\', \'void\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnVoid +'</button>';
+            }
+            
+            // 1.2.1.set Cancel Subscription button only
+            if (1 == nuveiVars.nuveiAllowCancelSubsBtn) {
+                scCancelSubscrButton += '<button class="btn btn-danger btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.orderConfirmCancelSubscr +'\', \'cancelSubscr\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.btnCancelSubscr +'</button>';
+            }
+        }
 
 		// 1.3.set Settle btn
 		if('1' == nuveiVars.nuveiAllowSettleBtn) {
@@ -158,7 +181,10 @@ function loadNuveiExtras() {
 				+ '</td>'
 				+ '<td colspan="2" class="text-right col-xs-6">'
                     + scRefundBtnsHtml
-                    + ('' != scVoidSettleButton ? '<div class="btn-group" role="group">' + scVoidSettleButton + '</div>' : '')
+                    + ('' != scVoidSettleButton ? '<div class="btn-group" role="group">' 
+                        + scVoidSettleButton + '</div>' : '')
+                    + ('' != scCancelSubscrButton ? '<div class="btn-group" role="group">' 
+                        + scCancelSubscrButton + '</div>' : '')
 				+ '</td>'
 			+ '</tr>'
 		);

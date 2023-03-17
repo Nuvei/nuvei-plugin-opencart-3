@@ -227,9 +227,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $req_status = $this->get_request_status();
         
-        if(empty($req_status)) {
-            $this->return_message('DMN report: the Status parameter is empty.');
-		}
+//        if(empty($req_status)) {
+//            $this->return_message('DMN report: the Status parameter is empty.');
+//		}
         
         if ('pending' == strtolower($req_status)) {
             $this->return_message('Pending DMN, wait for the next one.');
@@ -1217,7 +1217,10 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         // allow recurring only for Zero Auth Orders
         if('Auth' == $transactionType && 0 !== (int) NUVEI_CLASS::get_param('totalAmount')) {
-            NUVEI_CLASS::create_log($this->plugin_settings, 'The Auth Order total is not Zero. Do not start Rebilling');
+            NUVEI_CLASS::create_log(
+                $this->plugin_settings, 
+                'The Auth Order total is not Zero. Do not start Rebilling'
+            );
             return;
         }
         

@@ -97,6 +97,8 @@ $_['entry_sdk_version_help']        = 'It is not recommended to use Dev version 
 
 // Error					
 $_['error_permission']	      		= 'Warning: You do not have permission to modify Nuvei!'; 
+$_['error_missing_nuvei_data']	    = 'Missing Nuvei data for this Order'; 
+$_['error_missing_subscr_data']	    = 'Missing Nuvei Subscription data for this Order'; 
 $_['The request faild.']		    = 'The request faild.';
 $_['Invalid request response.']     = 'Invalid request response.';
 
@@ -108,7 +110,9 @@ $_['Cancel Rebiling requrest/s was/were sent.'] = 'Cancel Rebiling requrest/s wa
 $_['nuvei_unexpected_error']            = 'Unexpected error.';
 $_['nuvei_order_confirm_cancel']        = 'Are you sure, you want to Cancel Order';
 $_['nuvei_btn_void']                    = 'Void';
+$_['nuvei_btn_cancel_subscr']           = 'Cancel Subscr.';
 $_['nuvei_order_confirm_settle']        = 'Are you sure, you want to Settle Order';
+$_['nuvei_order_confirm_cancel_subscr'] = 'Are you sure, you want to Cancel this Subscription';
 $_['nuvei_btn_settle']                  = 'Settle';
 $_['nuvei_order_confirm_refund']        = 'Are you sure, you want to Refund Order';
 $_['nuvei_order_confirm_del_refund']    = 'Are you sure you want to delete this Manual Refund?';
