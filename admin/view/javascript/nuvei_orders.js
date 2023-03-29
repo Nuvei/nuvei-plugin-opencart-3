@@ -141,15 +141,15 @@ function loadNuveiExtras() {
             if(1 == nuveiVars.nuveiAllowVoidBtn) {
                 scRefundBtnsHtml +=
                     '<span class="input-group-btn" style="left: 2px;">'
-                        + '<button class="btn btn-danger btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmCancel +'\', \'void\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnVoid +'</button>'
+                        + '<button class="btn btn-danger btn-xs sc_order_btns" onclick="scOrderActions(\''+ nuveiVars.nuveiOrderConfirmCancel +'\', \'void\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.nuveiBtnVoid +'</button>'
                     + '</span>';
             }
             
             // add Cancel Subscription button
             if (1 == nuveiVars.nuveiAllowCancelSubsBtn) {
                 scRefundBtnsHtml +=
-                    '<span class="input-group-btn" style="left: 2px;">'
-                        + '<button class="btn btn-danger btn-xs sc_order_btns" style="margin-left: 2px;" onclick="scOrderActions(\''+ nuveiVars.orderConfirmCancelSubscr +'\', \'cancelSubscr\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.btnCancelSubscr +'</button>'
+                    '<span class="input-group-btn" style="left: 5px;">'
+                        + '<button class="btn btn-danger btn-xs sc_order_btns" onclick="scOrderActions(\''+ nuveiVars.orderConfirmCancelSubscr +'\', \'cancelSubscr\', '+ nuveiVars.nuveiOrderId +')">'+ nuveiVars.btnCancelSubscr +'</button>'
                     + '</span>';
             }
             
