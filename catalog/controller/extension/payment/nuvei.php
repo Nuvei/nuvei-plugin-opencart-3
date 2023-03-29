@@ -737,7 +737,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         # use or not UPOs
         // in case there is a Product with a Payment Plan
-//        if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
         if(!empty($rebilling_params['merchantDetails']['customField3'])) {
             $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
         }
@@ -824,19 +823,8 @@ class ControllerExtensionPaymentNuvei extends Controller
 		);
 
         // rebiling parameters
-        $rebilling_params = $this->preprare_rebilling_params();
-        // when will use UPOs
-//        if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
-//            $params['userTokenId'] = $this->order_addresses['billingAddress']['email'];
-//        }
-//        elseif($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_upos'] == 1) {
-//            $params['userTokenId'] = $this->order_addresses['billingAddress']['email'];
-//        }
-//        else {
-//            $params['userTokenId'] = null;
-//        }
-        
-        $params = array_merge_recursive($params, $rebilling_params);
+        $rebilling_params   = $this->preprare_rebilling_params();
+        $params             = array_merge_recursive($params, $rebilling_params);
         
 		$resp = NUVEI_CLASS::call_rest_api(
             'updateOrder', 
@@ -906,23 +894,25 @@ class ControllerExtensionPaymentNuvei extends Controller
     {
 		NUVEI_CLASS::create_log($this->plugin_settings, 'ajax_call()');
         
-        $this->load->model('catalog/product');
+        // check for product quantity
+//        $this->load->model('catalog/product');
         
-        $products = $this->cart->getProducts();
+//        $products = $this->cart->getProducts();
         
-        foreach ($products as $product) {
-            $prod_id        = $product['product_id'];
-            $product_data   = $this->model_catalog_product->getProduct($prod_id);
-            
-            if ($product_data['quantity'] < 1) {
-                exit(json_encode(array(
-                    'status'		=> 'error',
-                    'msg'           => $this->language->get('error_product_quantity')
-                )));
-            }
-            
-            NUVEI_CLASS::create_log($this->plugin_settings, $product_data, 'Cart $product_data');
-        }
+//        foreach ($products as $product) {
+//            $prod_id        = $product['product_id'];
+//            $product_data   = $this->model_catalog_product->getProduct($prod_id);
+//            
+//            if ($product_data['quantity'] < 1) {
+//                exit(json_encode(array(
+//                    'status'		=> 'error',
+//                    'msg'           => $this->language->get('error_product_quantity')
+//                )));
+//            }
+//            
+//            NUVEI_CLASS::create_log($this->plugin_settings, $product_data, 'Cart $product_data');
+//        }
+        // /check for product quantity
         
         $oo_data = $this->open_order();
 		

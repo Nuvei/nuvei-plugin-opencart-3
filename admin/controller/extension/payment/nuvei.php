@@ -844,7 +844,9 @@ class ControllerExtensionPaymentNuvei extends Controller
             ) {
                 $nuveiAllowVoidBtn = 1;
             }
-            if ($this->data['order_status_id']  == $this->config->get(NUVEI_SETTINGS_PREFIX . 'canceled_status_id')) {
+            if ($this->data['order_status_id']  == $this->config->get(NUVEI_SETTINGS_PREFIX . 'canceled_status_id')
+                || 0 == (float) $nuvei_remaining_total
+            ) {
                 $nuveiAllowVoidBtn = 0;
             }
             
