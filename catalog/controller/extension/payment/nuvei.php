@@ -1340,9 +1340,30 @@ class ControllerExtensionPaymentNuvei extends Controller
         );
         
         if ('Void' != $transactionType || 'APPROVED' != $this->get_request_status()) {
-            NUVEI_CLASS::create_log($this->plugin_settings, 'subscription_cancel() first check fail.');
+            NUVEI_CLASS::create_log(
+                $this->plugin_settings, 
+                'We Cancel Subscription only when the Void request is APPROVED.'
+            );
 			return;
 		}
+        
+        // check for active Subscription
+        $query =
+            "SELECT order_recurring_id "
+            . "FROM ". DB_PREFIX ."order_recurring "
+            . "WHERE order_id = " . (int) $order_id . " "
+            . "AND status = 1"; // active
+
+        $res = $this->db->query($query);
+
+        if(!isset($res->num_rows) || $res->num_rows == 0) {
+            NUVEI_CLASS::create_log(
+                $this->plugin_settings, 
+                'There is no active Subscription for this Order.'
+            );
+            return false;
+        }
+        // /check for active Subscription
         
         $order_data = $this->order_info['payment_custom_field'];
         

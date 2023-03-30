@@ -529,6 +529,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         if (0 == $amount
             && 'void' == $this->request->post['action']
             && !empty($last_allowed_trans['subscrIDs'])
+            && $this->is_active_recurring($order_id)
         ) {
             $resp = array(
                 'status'    => 0,
@@ -604,11 +605,43 @@ class ControllerExtensionPaymentNuvei extends Controller
 		exit;
     }
     
+    /**
+     * Help function to check is there active Subscription for an Order.
+     * 
+     * @param int $order_id
+     * @return bool
+     */
+    private function is_active_recurring($order_id)
+    {
+        $query =
+            "SELECT order_recurring_id "
+            . "FROM ". DB_PREFIX ."order_recurring "
+            . "WHERE order_id = " . (int) $order_id . " "
+            . "AND status = 1"; // active
+
+        $res = $this->db->query($query);
+
+        if(!isset($res->num_rows) || $res->num_rows == 0) {
+            return false;
+        }
+        
+        return true;
+    }
+    
     private function subscription_cancel()
     {
         NUVEI_CLASS::create_log($this->plugin_settings, 'subscription_cancel');
         
-        $order_id   = NUVEI_CLASS::get_param('orderId', FILTER_VALIDATE_INT);
+        $order_id = NUVEI_CLASS::get_param('orderId', FILTER_VALIDATE_INT);
+        
+        // search for active subscription
+        if(!$this->is_active_recurring($order_id)) {
+            exit(json_encode([
+                'status'    => 0,
+                'msg'       => $this->language->get('text_no_active_subscr'),
+            ]));
+        }
+        
         $order_info = $this->model_sale_order->getOrder($order_id);
         
         if (empty($order_info['payment_custom_field'])) {
@@ -859,18 +892,9 @@ class ControllerExtensionPaymentNuvei extends Controller
             }
             
             // can we show Cancel Subscription Button
-            $query =
-                "SELECT order_recurring_id "
-                . "FROM ". DB_PREFIX ."order_recurring "
-                . "WHERE order_id = " . $order_id . " "
-                . "AND status = 1"; // active
-            
-            $res = $this->db->query($query);
-            
-            if(isset($res->num_rows) && $res->num_rows > 0) {
+            if($this->is_active_recurring($order_id)) {
                 $allowCancelSubsBtn = 1;
             }
-            // /can we show Cancel Subscription Button
             
             $remainingTotalCurr = $this->currency->format(
                 $nuvei_remaining_total,

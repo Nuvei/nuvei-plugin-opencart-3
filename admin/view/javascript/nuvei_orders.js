@@ -33,8 +33,7 @@ function scOrderActions(confirmQusetion, action, orderId) {
     confirmQusetion += '?';
 
 	if(confirm(confirmQusetion)) {
-		var spinnerId = (action == 'void' ? 'void' : 'refund') + '_spinner';
-		$('#' + spinnerId).removeClass('hide');
+		$('#nuvei_spinner').removeClass('hide');
 		
 		// disable sc custom buttons
 		$('.sc_order_btns').each(function(){
@@ -67,7 +66,7 @@ function scOrderActions(confirmQusetion, action, orderId) {
 					}
 					
 
-					$('#' + spinnerId).addClass('hide');
+					$('#nuvei_spinner').addClass('hide');
 					
 					// enable sc custom buttons
 					$('.sc_order_btns').each(function(){
@@ -158,7 +157,7 @@ function loadNuveiExtras() {
         scPlaceOne.append(
 			'<tr>'
 				+ '<td>'
-					+ '<span>'+ nuveiVars.nuveiMoreActions +'&nbsp;&nbsp;<i id="void_spinner" class="fa fa-circle-o-notch fa-spin hide"></i></span>'
+					+ '<span>'+ nuveiVars.nuveiMoreActions +'&nbsp;&nbsp;<i id="nuvei_spinner" class="fa fa-circle-o-notch fa-spin hide"></i></span>'
 				+ '</td>'
 				+ '<td colspan="2" class="text-right col-xs-6">'
                     + '<div class="d-flex">' + nuveiButtons + '</div>'
