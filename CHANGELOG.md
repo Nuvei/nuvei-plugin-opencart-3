@@ -2,6 +2,19 @@
 
 ---
 
+# 1.3
+```
+    * Fix for the case where updateOrder can not update the userTokenId parameter.
+    * Do not pass billing and user details to Checkout request.
+    * Added Cancel Subscription button into Order details page > Nuvei Actions group.
+```
+
+# 1.2
+```
+    * Fix for the missing insufficient funds message.
+    * Fix for the wrong Nuvei Documentation links into the plugin settings.
+```
+
 # 1.1
 ```
     * Enabled OC recurring support.

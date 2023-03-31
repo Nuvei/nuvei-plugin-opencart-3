@@ -70,6 +70,16 @@
     function nuveiAfterSdkResponse(resp) {
         console.log('nuveiAfterSdkResponse', resp);
 
+        // a specific Error
+        if(resp.hasOwnProperty('status')
+            && resp.status == 'ERROR'
+            && resp.hasOwnProperty('reason')
+            && resp.reason.toLowerCase().search('the currency is not supported') >= 0
+        ) {
+            scFormFalse(resp.reason);
+            return;
+        }
+
         if(resp.hasOwnProperty('result')) {
             if(resp.result == 'APPROVED' && resp.hasOwnProperty('transactionId')) {
                 $('#sc_transaction_id').val(resp.transactionId);
@@ -79,9 +89,11 @@
             }
             
             if(resp.result == 'DECLINED') {
-                if (resp.hasOwnProperty('errorDescription') && 'Insufficient funds' == resp.errorDescription) {
+                if (resp.hasOwnProperty('errorDescription')
+                    && 'insufficient funds' == resp.errorDescription.toLowerCase()
+                ) {
                     scFormFalse("<?= $this->language->get('error_insuff_funds'); ?>");
-                    return
+                    return;
                 }
                 
                 scFormFalse("<?= $this->language->get('nuvei_order_declined'); ?>");
@@ -182,7 +194,14 @@
                     return;
                 }
                 
-                reject("<?= $this->language->get('nuvei_order_error'); ?>");
+                if (resp.hasOwnProperty('msg') && '' != resp.msg) {
+                    scFormFalse(resp.msg);
+                    reject();
+                    return;
+                }
+                
+                scFormFalse("<?= $this->language->get('nuvei_order_error'); ?>");
+                reject();
             });
             
         });

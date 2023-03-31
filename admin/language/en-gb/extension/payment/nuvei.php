@@ -7,7 +7,7 @@ $_['text_extension']    = 'Extensions';
 $_['text_payment']      = 'Payment';
 $_['text_success']		= 'Success: You have modified the Nuvei details.';
 $_['text_edit']         = 'Edit Nuvei Checkout extension';
-$_['text_nuvei']        = '<a href="http://nuvei.com/" target="_blank"><img src="view/image/payment/nuvei.png" alt="Nuvei" title="Nuvei" style="border: 1px solid #EEEEEE;" /></a>';
+$_['text_nuvei']        = '<a href="http://nuvei.com/" target="_blank"><img src="view/image/payment/nuvei.png" alt="Nuvei" title="Nuvei" /></a>';
 	
 // Settings tabs
 $_['text_general_tab']  = 'General';
@@ -28,12 +28,13 @@ $_['text_btn_amount']       = 'Shows the amount';
 $_['text_btn_pm']           = 'Shows the payment method';
 $_['text_log_level_help']   = '0 for "No logging"';
 $_['text_last_download']    = 'Last download';
+$_['text_no_active_subscr'] = 'There is no active Recurring for this Order.';
 
-$_['text_sdk_transl_help']  = 'This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples <a href="https://docs.nuvei.com/documentation/accept-payment/checkout-2/ui-customization/#text-and-translation">check the Documentation</a>.';
+$_['text_sdk_transl_help']  = 'This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/ui-customization/#text-and-translation" target="_blank">check the Documentation</a>.';
 
-$_['text_block_cards_help'] = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/checkout-2/payment-customization/#card-processing" target="_blank"> check the Documentation.</a>';
+$_['text_block_cards_help'] = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/payment-customization/#Card_Processing" target="_blank"> check the Documentation.</a>';
 
-$_['text_block_pms_help']   = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/checkout-2/payment-customization/#apm-whitelisting-blacklisting" target="_blank"> check the Documentation.</a>';
+$_['text_block_pms_help']   = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/payment-customization/#apm-whitelisting-blacklisting" target="_blank"> check the Documentation.</a>';
 
 $_['text_plan_id_help']     = 'For Rebilling you need at least one Rebilling Plan. Creat it, and get its number from the CPanel.';
 
@@ -41,7 +42,7 @@ $_['text_change_order_status'] = 'Change the Order status to Pending on successf
 
 $_['text_no_github_plugin_version']     = 'Nuvei message - can not find the plugin version into github changelog file.';
 $_['text_github_plugin_same_version']   = 'Git version is same as the current plugin version.';
-$_['text_github_new_plugin_version']    = 'There is <a href="https://github.com/SafeChargeInternational/nuvei_checkout_opencart3/blob/main/CHANGELOG.md">newer version</a> for Nuvei Checkout plugin.';
+$_['text_github_new_plugin_version']    = 'There is <a href="https://github.com/SafeChargeInternational/nuvei_checkout_opencart3/blob/main/CHANGELOG.md" target="_blank">newer version</a> for Nuvei Checkout plugin.';
 
 // Entry					
 $_['entry_merchantId']      = 'Merchant ID:';
@@ -97,6 +98,8 @@ $_['entry_sdk_version_help']        = 'It is not recommended to use Dev version 
 
 // Error					
 $_['error_permission']	      		= 'Warning: You do not have permission to modify Nuvei!'; 
+$_['error_missing_nuvei_data']	    = 'Missing Nuvei data for this Order'; 
+$_['error_missing_subscr_data']	    = 'Missing Nuvei Subscription data for this Order'; 
 $_['The request faild.']		    = 'The request faild.';
 $_['Invalid request response.']     = 'Invalid request response.';
 
@@ -108,7 +111,9 @@ $_['Cancel Rebiling requrest/s was/were sent.'] = 'Cancel Rebiling requrest/s wa
 $_['nuvei_unexpected_error']            = 'Unexpected error.';
 $_['nuvei_order_confirm_cancel']        = 'Are you sure, you want to Cancel Order';
 $_['nuvei_btn_void']                    = 'Void';
+$_['nuvei_btn_cancel_subscr']           = 'Cancel Recurring';
 $_['nuvei_order_confirm_settle']        = 'Are you sure, you want to Settle Order';
+$_['nuvei_order_confirm_cancel_subscr'] = 'Are you sure, you want to Cancel this Subscription';
 $_['nuvei_btn_settle']                  = 'Settle';
 $_['nuvei_order_confirm_refund']        = 'Are you sure, you want to Refund Order';
 $_['nuvei_order_confirm_del_refund']    = 'Are you sure you want to delete this Manual Refund?';

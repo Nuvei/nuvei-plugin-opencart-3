@@ -50,8 +50,12 @@ window.onload = (event) => {
             if(resp.status == 1 && resp.hasOwnProperty('msg')) {
                 $('#content .container-fluid:first')
                     .append('<div class="alert alert-info"><i class="fa fa-info-circle"></i> '+ resp.msg +'</div>');
-        
-                document.cookie = 'nuvei_plugin_msg='+ resp.msg +';path=/admin';
+                 
+                // set cookie life to 6 days
+                const d = new Date();
+                d.setTime(d.getTime() + (6*24*60*60*1000));
+
+                document.cookie = 'nuvei_plugin_msg='+ resp.msg +'; expires=' + d.toUTCString() + '; path=/admin';
                 return;
             }
 

@@ -316,6 +316,8 @@
                                                 <?php endforeach;
                                             endif; ?>
                                         </select>
+                                        
+                                        <span class="help-block"><?= $this->language->get('text_block_pms_help'); ?></span>
                                     </div>
                                 </div>
 
@@ -403,36 +405,21 @@
                                         <span class="help-block"><?= $this->language->get('text_sdk_transl_help'); ?></span>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Rebilling Plan ID -->
-                            <div class="form-group">
-                                <label class="col-sm-2 control-label"><?= $this->language->get('entry_rebilling_plan_id'); ?></label>
-                                <div class="col-sm-10">
-                                    <input type="text" name="<?= NUVEI_SETTINGS_PREFIX; ?>plan_id" value="<?= @$data[NUVEI_SETTINGS_PREFIX . 'plan_id']; ?>" class="form-control" pattern="[0-9]+" required="" />
-                                    
-                                    <span class="help-block"><?= $this->language->get('text_plan_id_help'); ?></span>
+                                
+                                <!-- Rebilling Plan ID -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_rebilling_plan_id'); ?></label>
+                                    <div class="col-sm-10">
+                                        <input type="text" name="<?= NUVEI_SETTINGS_PREFIX; ?>plan_id" value="<?= @$data[NUVEI_SETTINGS_PREFIX . 'plan_id']; ?>" class="form-control" pattern="[0-9]+" required="" />
+
+                                        <span class="help-block"><?= $this->language->get('text_plan_id_help'); ?></span>
+                                    </div>
                                 </div>
                             </div>
                             <!-- /advanced settings -->
 
                             <!-- tools -->
                             <div class="tab-pane fade" id="nuvei_tools">
-                                <!-- Download Payment Plans -->
-                                <div class="form-group">
-                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_donwload_p_plans'); ?></label>
-                                    <div class="col-lg-10">
-                                        <button type="button" onclick="downloadNuveiPlans()" class="btn btn-default" id="nuvei_dl_plans_btn">
-                                            <i class="fa fa-download"></i>
-                                        </button>
-
-                                        <span class="help-block" id="nuvei_last_dl_data">
-                                            <?php if(!empty($paymentPlanJsonDlDate)):
-                                                echo $this->language->get('text_last_download') . ' ' . $paymentPlanJsonDlDate;
-                                            endif; ?></span>
-                                    </div>
-                                </div>
-
                                 <!-- DMN URL -->
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_dmn_url'); ?></label>
@@ -467,22 +454,5 @@
         </div>
     </div>
 </div>
-
-<script>
-    function downloadNuveiPlans() {
-        jQuery.ajax({
-            type: "POST",
-            dataType: 'json',
-            url: window.location.href,
-            data: { action : 'getNuveiPlans' },
-        })
-        .done(function(resp){
-            console.log(resp)
-        })
-        .fail(function(resp){
-            console.error(resp)
-        });
-    }
-</script>
 
 <?= $data['footer']; ?>

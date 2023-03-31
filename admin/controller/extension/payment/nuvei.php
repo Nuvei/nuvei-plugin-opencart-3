@@ -23,12 +23,22 @@ class ControllerExtensionPaymentNuvei extends Controller
 	
     public function install()
     {
-        
+        // remove the plugin upgrade cookie if exists
+        if (!empty($_COOKIE['nuvei_plugin_msg'])) {
+            unset($_COOKIE['nuvei_plugin_msg']);
+            setcookie('nuvei_plugin_msg', null, -1, '/'); 
+            return true;
+        }
     }
     
     public function uninstall()
     {
-        
+        // remove the plugin upgrade cookie if exists
+        if (!empty($_COOKIE['nuvei_plugin_msg'])) {
+            unset($_COOKIE['nuvei_plugin_msg']);
+            setcookie('nuvei_plugin_msg', null, -1, '/'); 
+            return true;
+        }
     }
     
 	public function index()
@@ -192,25 +202,25 @@ class ControllerExtensionPaymentNuvei extends Controller
                 $this->get_nuvei_vars();
                 exit;
                 
-            case 'getNuveiPlans':
-                $this->get_nuvei_plans();
-                exit;
-                
             case 'refund':
                 $this->order_refund();
                 exit;
                 
-            case 'refundManual':
-                $this->order_refund(true);
-                exit;
+//            case 'refundManual':
+//                $this->order_refund(true);
+//                exit;
                 
-            case 'deleteManualRefund':
-                $this->delete_refund();
-                exit;
+//            case 'deleteManualRefund':
+//                $this->delete_refund();
+//                exit;
                 
             case 'void':
             case 'settle':
                 $this->order_void_settle();
+                exit;
+                
+            case 'cancelSubscr':
+                $this->subscription_cancel();
                 exit;
                 
             default:
@@ -231,7 +241,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         $order_id           = (int) $this->request->post['orderId'];
         $this->notify_url   = $this->url->link(
             NUVEI_CONTROLLER_PATH
-//            . '/callback&nuvei_create_logs=' . $_SESSION['nuvei_create_logs']
             . '/callback'
             . '&action=' . $this->ajax_action . '&order_id=' . $order_id
         );
@@ -370,22 +379,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             )));
         }
         
-//        $cpanel_url = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'test_mode'] == 'no' ? 'cpanel.safecharge.com' : 'sandbox.safecharge.com';
-//
-//        $msg = '';
-//        $error_note = 'Request Refund #' . $clientUniqueId . ' fail, if you want login into <i>' . $cpanel_url
-//            . '</i> and refund Transaction ID ' . $last_sale_tr['transactionId'];
-
         if($resp === false) {
-//            $msg = 'The REST API retun false. ' . $error_note;
-//
-//            // save response message in the History
-//            $this->db->query(
-//                "INSERT INTO `" . DB_PREFIX ."order_history` (`order_id`, `order_status_id`, `notify`, `comment`, `date_added`) "
-//                . "VALUES (" . $order_id . ", " . $this->data['order_status_id']
-//                . ", 0, '" . $msg . "', '" . date('Y-m-d H:i:s', time()) . "');"
-//            );
-            
             exit(json_encode(array(
                 'status'    => 0,
                 'msg'       => $this->language->load('The request faild.')
@@ -393,15 +387,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         
         if(!is_array($resp)) {
-//            $msg = 'Invalid API response. ' . $error_note;
-//
-//            // save response message in the History
-//            $this->db->query(
-//                "INSERT INTO `" . DB_PREFIX ."order_history` (`order_id`, `order_status_id`, `notify`, `comment`, `date_added`) "
-//                . "VALUES (" . $order_id . ", " . $this->data['order_status_id']
-//                . ", 0, '" . $msg . "', '" . date('Y-m-d H:i:s', time()) . "');"
-//            );
-            
             exit(json_encode(array(
                 'status'    => 0,
                 'msg'       => $this->language->load('Invalid request response.')
@@ -410,23 +395,11 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         // the status of the request is ERROR
         if(!empty($resp['status']) && $resp['status'] == 'ERROR') {
-//            $msg = 'Request ERROR - "' . $resp['reason'] .'" '. $error_note;
-//            
-//            // save response message in the History
-//            $this->db->query(
-//                "INSERT INTO `" . DB_PREFIX ."order_history` (`order_id`, `order_status_id`, `notify`, `comment`, `date_added`) "
-//                . "VALUES (" . $order_id . ", " . $this->data['order_status_id']
-//                . ", 0, '" . $msg . "', '" . date('Y-m-d H:i:s', time()) . "');"
-//            );
-
             exit(json_encode(array(
                 'status'    => 0, 
                 'msg'       => $resp['reason']
             )));
         }
-        
-        // if request is success, we will wait for DMN
-//        $msg = 'Request Refund #' . $clientUniqueId . ', was sent. Please, wait for DMN!';
         
         $order_status = 1; // pending
         
@@ -462,9 +435,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         $ref_key_to_delete  = null;
         
         try {
-//            $resp = $this->db->query("DELETE FROM nuvei_refunds WHERE id = " . $order_id . ";");
-//            echo json_encode(array('success' => $resp));
-            
             foreach($nuvei_data as $key => $tr_data) {
                 if($tr_data['clientUniqueId'] == $ref_id) {
                     $ref_key_to_delete = $key;
@@ -559,38 +529,33 @@ class ControllerExtensionPaymentNuvei extends Controller
         if (0 == $amount
             && 'void' == $this->request->post['action']
             && !empty($last_allowed_trans['subscrIDs'])
-//            && is_array($last_allowed_trans['subscrIDs'])
+            && $this->is_active_recurring($order_id)
         ) {
             $resp = array(
                 'status'    => 0,
                 'msg'       => ''
             );
             
-            //foreach($last_allowed_trans['subscrIDs'] as $subscrID) {
-                $resp = NUVEI_CLASS::call_rest_api(
-                    'cancelSubscription',
-                    $this->plugin_settings,
-                    ['merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp'],
-//                    ['subscriptionId' => $subscrID]
-                    ['subscriptionId' => $last_allowed_trans['subscrIDs']]
-                );
-                
-                if(!$resp || !is_array($resp)
-                    || @$resp['status'] == 'ERROR'
-                    || @$resp['transactionStatus'] == 'ERROR'
-                ) {
-                    $resp['msg'] = $this->language->get('Cancel requrest for Subscription ID ') 
-                        . $last_allowed_trans['subscrIDs'] . $this->language->get('failed.') . ' ';
-//                    continue;
-                }
-                elseif(@$resp['transactionStatus'] == 'DECLINED') {
-                    $resp['msg'] = $this->language->get('Cancel requrest for Subscription ID ') 
-                        . $last_allowed_trans['subscrIDs'] . $this->language->get('was declined.') . ' ';
-//                    continue;
-                }
+            $resp = NUVEI_CLASS::call_rest_api(
+                'cancelSubscription',
+                $this->plugin_settings,
+                ['merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp'],
+                ['subscriptionId' => $last_allowed_trans['subscrIDs']]
+            );
 
-                $resp['status'] = 1;
-            //}
+            if(!$resp || !is_array($resp)
+                || @$resp['status'] == 'ERROR'
+                || @$resp['transactionStatus'] == 'ERROR'
+            ) {
+                $resp['msg'] = $this->language->get('Cancel requrest for Subscription ID ') 
+                    . $last_allowed_trans['subscrIDs'] . $this->language->get('failed.') . ' ';
+            }
+            elseif(@$resp['transactionStatus'] == 'DECLINED') {
+                $resp['msg'] = $this->language->get('Cancel requrest for Subscription ID ') 
+                    . $last_allowed_trans['subscrIDs'] . $this->language->get('was declined.') . ' ';
+            }
+
+            $resp['status'] = 1;
             
             $this->db->query(
                 'UPDATE ' . DB_PREFIX . 'order '
@@ -641,12 +606,108 @@ class ControllerExtensionPaymentNuvei extends Controller
     }
     
     /**
+     * Help function to check is there active Subscription for an Order.
+     * 
+     * @param int $order_id
+     * @return bool
+     */
+    private function is_active_recurring($order_id)
+    {
+        $query =
+            "SELECT order_recurring_id "
+            . "FROM ". DB_PREFIX ."order_recurring "
+            . "WHERE order_id = " . (int) $order_id . " "
+            . "AND status = 1"; // active
+
+        $res = $this->db->query($query);
+
+        if(!isset($res->num_rows) || $res->num_rows == 0) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    private function subscription_cancel()
+    {
+        NUVEI_CLASS::create_log($this->plugin_settings, 'subscription_cancel');
+        
+        $order_id = NUVEI_CLASS::get_param('orderId', FILTER_VALIDATE_INT);
+        
+        // search for active subscription
+        if(!$this->is_active_recurring($order_id)) {
+            exit(json_encode([
+                'status'    => 0,
+                'msg'       => $this->language->get('text_no_active_subscr'),
+            ]));
+        }
+        
+        $order_info = $this->model_sale_order->getOrder($order_id);
+        
+        if (empty($order_info['payment_custom_field'])) {
+            NUVEI_CLASS::create_log($this->plugin_settings, $order_info, 'subscription_cancel error');
+            
+            exit(json_encode([
+                'status'    => 0,
+                'msg'       => $this->language->get('error_missing_nuvei_data'),
+            ]));
+        }
+        
+        $order_data = $order_info['payment_custom_field'];
+        
+        foreach (array_reverse($order_data) as $transaction) {
+            if (empty($transaction['subscrIDs'])) {
+                continue;
+            }
+            
+            $resp = NUVEI_CLASS::call_rest_api(
+                'cancelSubscription',
+                $this->plugin_settings,
+                array('merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp'),
+                ['subscriptionId' => $transaction['subscrIDs']]
+            );
+
+            // On Error
+            if (empty($resp['status']) || 'SUCCESS' != $resp['status']) {
+                $msg = $this->language->get('Error when try to cancel Subscription #')
+                    . $transaction['subscrIDs'] . ' ';
+
+                if (!empty($resp['reason'])) {
+                    $msg .= '<br/>' . $this->language->get('Reason: ') . $resp['reason'];
+                }
+
+                $this->model_sale_order->addOrderHistory(
+                    $order_id,
+                    $order_info['order_status_id'],
+                    $msg,
+                    true // $send_message
+                );
+                
+                exit(json_encode([
+                    'status'    => 0,
+                    'msg'       => $msg,
+                ]));
+            }
+
+            exit(json_encode([
+                'status'    => 1,
+            ]));
+        }
+        
+		exit(json_encode([
+            'status'    => 0,
+            'msg'       => $this->language->get('error_missing_subscr_data'),
+        ]));
+    }
+    
+    /**
      * Check required Nuvei Setting when try to save them.
      * 
      * @param string NUVEI_CONTROLLER_PATH
      * @return array $this->data
      */
-    private function validate_settings() {
+    private function validate_settings()
+    {
         $this->data = $this->load->language(NUVEI_CONTROLLER_PATH); // add translation in the data
         
         // when save the settings
@@ -655,24 +716,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             $save_post = true;
             
             if (!$this->user->hasPermission('modify', NUVEI_CONTROLLER_PATH)) {
-//                $this->data['error_permission'] = false;
                 $this->error['warning'] = $this->language->get('error_permission');
             }
-//            else {
-//                $save_post = false;
-//            }
-            
-            // iterate over incoming Nuvei settings
-//            foreach($this->required_settings as $setting) {
-//                if (isset($this->request->post[NUVEI_SETTINGS_PREFIX . $setting])
-//                    && '' != $this->request->post[NUVEI_SETTINGS_PREFIX . $setting]
-//                ) {
-//                    $this->data['error_' . $setting] = false;
-//                }
-//                else {
-//                    $save_post = false;
-//                }
-//            }
             
             // if all is ok - save settings
             if($save_post) {
@@ -684,11 +729,6 @@ class ControllerExtensionPaymentNuvei extends Controller
                 $this->session->data['success'] = $this->data['text_success'];
             }
         }
-        
-        // in case this is not Post just remove all errors
-//        foreach($this->required_settings as $setting) {
-//            $this->data['error_' . $setting] = false;
-//        }
         
         $this->data['error_permission'] = false;
     }
@@ -761,8 +801,6 @@ class ControllerExtensionPaymentNuvei extends Controller
             }
 		}
         
-//        echo '<pre>' .print_r($res['paymentMethods'],true).'</pre>';
-//        echo '<pre>' .print_r($payment_methods,true).'</pre>';
 		$this->data['nuvei_pms'] = $payment_methods;
 	}
     
@@ -786,15 +824,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         return '';
     }
     
-    /*
-    private function get_nuvei_plans()
-    {
-        exit(json_encode([
-            'status' => 0
-        ]));
-    }
-     */
-    
     private function get_nuvei_vars()
     {
         $order_id               = (int) $this->request->post['orderId'];
@@ -802,11 +831,11 @@ class ControllerExtensionPaymentNuvei extends Controller
         $nuvei_last_trans       = [];
         $nuvei_refunds          = [];
         $remainingTotalCurr     = '';
-        //$nuvei_settings             = $this->model_setting_setting->getSetting(trim(NUVEI_SETTINGS_PREFIX, '_'));
         $nuvei_remaining_total  = $this->get_price($this->data['total']);
         $nuveiAllowRefundBtn    = 0;
         $nuveiAllowVoidBtn      = 0;
         $nuveiAllowSettleBtn    = 0;
+        $allowCancelSubsBtn     = 0;
         $isNuveiOrder           = NUVEI_PLUGIN_CODE == $this->data['payment_code'] ? 1 : 0;
         
         if(1 == $isNuveiOrder
@@ -848,7 +877,9 @@ class ControllerExtensionPaymentNuvei extends Controller
             ) {
                 $nuveiAllowVoidBtn = 1;
             }
-            if ($this->data['order_status_id']  == $this->config->get(NUVEI_SETTINGS_PREFIX . 'canceled_status_id')) {
+            if ($this->data['order_status_id']  == $this->config->get(NUVEI_SETTINGS_PREFIX . 'canceled_status_id')
+                || 0 == (float) $nuvei_remaining_total
+            ) {
                 $nuveiAllowVoidBtn = 0;
             }
             
@@ -858,6 +889,11 @@ class ControllerExtensionPaymentNuvei extends Controller
                 && (float) $nuvei_last_trans['totalAmount'] > 0
             ) {
                 $nuveiAllowSettleBtn = 1;
+            }
+            
+            // can we show Cancel Subscription Button
+            if($this->is_active_recurring($order_id)) {
+                $allowCancelSubsBtn = 1;
             }
             
             $remainingTotalCurr = $this->currency->format(
@@ -871,6 +907,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'nuveiAllowRefundBtn'           => $nuveiAllowRefundBtn,
             'nuveiAllowVoidBtn'             => $nuveiAllowVoidBtn,
             'nuveiAllowSettleBtn'           => $nuveiAllowSettleBtn,
+            'nuveiAllowCancelSubsBtn'       => $allowCancelSubsBtn,
             'nuveiRefunds'                  => json_encode($nuvei_refunds),
             'remainingTotalCurr'            => $remainingTotalCurr, // formated
             'isNuveiOrder'                  => $isNuveiOrder,
@@ -886,7 +923,9 @@ class ControllerExtensionPaymentNuvei extends Controller
             'nuveiBtnManualRefund'          => $this->language->get('nuvei_btn_manual_refund'),
             'nuveiBtnRefund'                => $this->language->get('nuvei_btn_refund'),
             'nuveiBtnVoid'                  => $this->language->get('nuvei_btn_void'),
+            'btnCancelSubscr'               => $this->language->get('nuvei_btn_cancel_subscr'),
             'nuveiOrderConfirmCancel'       => $this->language->get('nuvei_order_confirm_cancel'),
+            'orderConfirmCancelSubscr'      => $this->language->get('nuvei_order_confirm_cancel_subscr'),
             'nuveiBtnSettle'                => $this->language->get('nuvei_btn_settle'),
             'nuveiOrderConfirmSettle'       => $this->language->get('nuvei_order_confirm_settle'),
             'nuveiMoreActions'              => $this->language->get('nuvei_more_actions'),
@@ -949,4 +988,5 @@ class ControllerExtensionPaymentNuvei extends Controller
             'msg'       => $this->language->get('text_github_new_plugin_version'),
         ]));
     }
+    
 }

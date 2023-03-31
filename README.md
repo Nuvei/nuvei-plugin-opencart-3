@@ -1,4 +1,4 @@
-# Nuvei Chekout Plugin for OpenCart 3
+# Nuvei Plugin for OpenCart 3 with Simply Connect
 How to install the plugin manually
 
 1. Upload the folders "admin", "catalog" and "system" to the OC install root directory.
