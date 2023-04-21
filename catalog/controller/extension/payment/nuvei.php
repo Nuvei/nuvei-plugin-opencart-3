@@ -723,7 +723,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 			'userDetails'       => $this->order_addresses['billingAddress'],
 			'billingAddress'	=> $this->order_addresses['billingAddress'],
             'shippingAddress'   => $this->order_addresses['shippingAddress'],
-			'transactionType'	=> $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action'],
+			'transactionType'	=> (float) $amount == 0 ? 'Auth' : $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action'],
 		);
 		
         // change urlDetails
@@ -808,6 +808,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'clientRequestId'	=> $this->session->data['nuvei_last_oo_details']['clientRequestId'],
             'currency'          => $this->order_info['currency_code'],
             'amount'            => $amount,
+            'transactionType'	=> (float) $amount == 0 ? 'Auth' : $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action'],
             
             'userDetails'	=> $this->order_addresses['billingAddress'],
             'billingAddress'	=> $this->order_addresses['billingAddress'],

@@ -2,6 +2,11 @@
 
 ---
 
+# 1.4
+```
+    * Force transaction type to Auth when Order total amount is 0.
+```
+
 # 1.3
 ```
     * Fix for the case where updateOrder can not update the userTokenId parameter.
