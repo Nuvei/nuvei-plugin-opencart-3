@@ -175,7 +175,8 @@
                 dataType: 'json'
             })
             .fail(function(){
-                reject("<?= $this->language->get('nuvei_order_error'); ?>");
+                scFormFalse("<?= $this->language->get('nuvei_order_error'); ?>");
+                reject();
             })
             .done(function(resp) {
                 if(resp.hasOwnProperty('sessionToken') && '' != resp.sessionToken) {

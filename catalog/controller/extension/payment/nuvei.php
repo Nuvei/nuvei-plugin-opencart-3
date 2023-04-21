@@ -681,6 +681,9 @@ class ControllerExtensionPaymentNuvei extends Controller
             ? $this->session->data['nuvei_last_oo_details'] : [];
         // rebiling parameters
         $rebilling_params       = $this->preprare_rebilling_params();
+        $amount                 = $this->get_price($this->order_info['total']);
+        $try_update_order       = false;
+        $session_tr_type        = '';
         
         NUVEI_CLASS::create_log($this->plugin_settings, $nuvei_last_oo_details);
         
@@ -688,42 +691,52 @@ class ControllerExtensionPaymentNuvei extends Controller
         if (! (empty($this->session->data['nuvei_last_oo_details']['userTokenId'])
             && !empty($rebilling_params['merchantDetails']['customField3'])
         ) ) {
-            $resp = $this->update_order();
+            $try_update_order = true;
+        }
+        
+        if (empty($this->session->data['nuvei_last_oo_details']['transactionType'])) {
+            $try_update_order = false;
         }
         else {
-            NUVEI_CLASS::create_log(
-                $this->plugin_settings, 
-                [
-                    'userTokenId'   => @$this->session->data['nuvei_last_oo_details']['userTokenId'],
-                    'customField3'  => @$rebilling_params['merchantDetails']['customField3'],
-                ],
-                'Go directly to openOrder', 
-                'DEBUG'
-            );
+            $session_tr_type = $this->session->data['nuvei_last_oo_details']['transactionType'];
         }
-		
-        if (!empty($resp['status']) && 'SUCCESS' == $resp['status']) {
-			return $resp;
-		}
-        # /try to update Order
         
-        $amount = $this->get_price($this->order_info['total']);
+        if ($amount == 0
+            && (empty($session_tr_type) || 'Auth' != $session_tr_type)
+        ) {
+            $try_update_order = false;
+        }
+        
+        if ($amount > 0
+            && !empty($session_tr_type)
+            && 'Auth' == $session_tr_type
+            && $session_tr_type != $this->plugin_settings['payment_action']
+        ) {
+            $try_update_order = false;
+        }
+        
+        if ($try_update_order) {
+            $resp = $this->update_order();
+            
+            if (!empty($resp['status']) && 'SUCCESS' == $resp['status']) {
+                return $resp;
+            }
+        }
+        # /try to update Order
         
 		$oo_params = array(
 			'clientUniqueId'	=> $this->session->data['order_id'] . '_' . uniqid(),
             'clientRequestId'   => date('YmdHis', time()) . '_' . uniqid(),
 			'amount'            => $amount,
+            'transactionType'	=> (float) $amount == 0 ? 'Auth' : $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action'],
 			'currency'          => $this->order_info['currency_code'],
-			
-			'urlDetails'        => array(
-				'backUrl'			=> $this->url->link('checkout/checkout', '', true),
-				'notificationUrl'   => $this->url->link(NUVEI_CONTROLLER_PATH . '/callback'),
-			),
-			
 			'userDetails'       => $this->order_addresses['billingAddress'],
 			'billingAddress'	=> $this->order_addresses['billingAddress'],
             'shippingAddress'   => $this->order_addresses['shippingAddress'],
-			'transactionType'	=> (float) $amount == 0 ? 'Auth' : $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action'],
+            'urlDetails'        => array(
+				'backUrl'			=> $this->url->link('checkout/checkout', '', true),
+				'notificationUrl'   => $this->url->link(NUVEI_CONTROLLER_PATH . '/callback'),
+			),
 		);
 		
         // change urlDetails
@@ -766,6 +779,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         // set them to session for the check before submit the data to the webSDK
         $this->session->data['nuvei_last_oo_details']['amount']             = $oo_params['amount'];
+        $this->session->data['nuvei_last_oo_details']['transactionType']    = $oo_params['transactionType'];
         $this->session->data['nuvei_last_oo_details']['sessionToken']       = $resp['sessionToken'];
         $this->session->data['nuvei_last_oo_details']['clientRequestId']    = $resp['clientRequestId'];
         $this->session->data['nuvei_last_oo_details']['orderId']            = $resp['orderId'];
@@ -808,9 +822,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'clientRequestId'	=> $this->session->data['nuvei_last_oo_details']['clientRequestId'],
             'currency'          => $this->order_info['currency_code'],
             'amount'            => $amount,
-            'transactionType'	=> (float) $amount == 0 ? 'Auth' : $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action'],
-            
-            'userDetails'	=> $this->order_addresses['billingAddress'],
+            'userDetails'       => $this->order_addresses['billingAddress'],
             'billingAddress'	=> $this->order_addresses['billingAddress'],
             'shippingAddress'   => $this->order_addresses['shippingAddress'],
             
