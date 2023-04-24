@@ -710,7 +710,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         if ($amount > 0
             && !empty($session_tr_type)
             && 'Auth' == $session_tr_type
-            && $session_tr_type != $this->plugin_settings['payment_action']
+            && $session_tr_type != $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action']
         ) {
             $try_update_order = false;
         }
