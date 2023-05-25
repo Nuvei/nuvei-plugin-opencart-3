@@ -2,6 +2,11 @@
 
 ---
 
+# 1.5
+```
+    * Changed sourceApplication and webMasterId parameters value.
+```
+
 # 1.4
 ```
     * Force transaction type to Auth when Order total amount is 0.
