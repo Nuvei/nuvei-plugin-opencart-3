@@ -5,6 +5,7 @@
 # 1.5
 ```
     * Changed sourceApplication and webMasterId parameters value.
+    * Remove required flag from plugin "plan_id" setting.
 ```
 
 # 1.4
