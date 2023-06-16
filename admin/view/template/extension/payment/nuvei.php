@@ -279,6 +279,20 @@
                                     </div>
                                 </div>-->
 
+                                <!-- Checkout SDK Theme -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_sdk_theme'); ?></label>
+                                    <div class="col-lg-10">
+                                        <select name="<?= NUVEI_SETTINGS_PREFIX; ?>sdk_theme" class="form-control">
+                                            <option value="accordion" <?php if (@$data[NUVEI_SETTINGS_PREFIX . 'sdk_theme'] == "accordion"): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_accordion'); ?></option>
+                                            
+                                            <option value="tiles"  <?php if (@$data[NUVEI_SETTINGS_PREFIX . 'sdk_theme'] == "tiles"): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_tiles'); ?></option>
+                                            
+                                            <option value="horizontal" <?php if (@$data[NUVEI_SETTINGS_PREFIX . 'sdk_theme'] == "horizontal"): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_horizontal'); ?></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
                                 <!-- DCC -->
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_dcc'); ?></label>

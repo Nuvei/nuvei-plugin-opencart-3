@@ -6,6 +6,8 @@
 ```
     * Changed Sanbox REST API endpoint.
     * Removed plugin option to change SDK version.
+    * Added new company logo to the admin.
+    * Added SimplyConnect themes.
 ```
 
 # 1.5

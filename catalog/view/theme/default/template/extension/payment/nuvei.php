@@ -16,6 +16,9 @@
 		margin-top: 10%;
 	}
     
+    .sfc-main-container.horizontal {
+        display: grid;
+    }
 </style>
 
 <div class="modal" tabindex="-1" role="dialog" id="nuvei_modal">

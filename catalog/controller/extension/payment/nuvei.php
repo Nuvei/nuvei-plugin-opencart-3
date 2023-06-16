@@ -101,6 +101,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'autoOpenPM'             => (bool) $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_expand_pms'],
             'logLevel'               => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_log_level'],
             'i18n'                   => json_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_transl'], true),
+            'theme'                  => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_theme'],
 //            'billingAddress'         => $order_data['billingAddress'],
 //            'userData'               => ['billingAddress' => $order_data['billingAddress']],
         ];

@@ -29,6 +29,9 @@ $_['text_btn_pm']           = 'Shows the payment method';
 $_['text_log_level_help']   = '0 for "No logging"';
 $_['text_last_download']    = 'Last download';
 $_['text_no_active_subscr'] = 'There is no active Recurring for this Order.';
+$_['text_accordion']        = 'Accordion';
+$_['text_tiles']            = 'Tiles';
+$_['text_horizontal']       = 'Horizontal';
 
 $_['text_sdk_transl_help']  = 'This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/ui-customization/#text-and-translation" target="_blank">check the Documentation</a>.';
 
@@ -73,6 +76,7 @@ $_['entry_preselect_nuvei']     = 'Preselect Nuvei on checkout:';
 //$_['entry_sdk_version']         = 'SDK version:';
 $_['entry_prod']                = 'Prod';
 $_['entry_dev']                 = 'Dev';
+$_['entry_sdk_theme']           = 'SimplyConnect theme:';
 $_['entry_dcc']                 = 'Use currency conversion:';
 $_['entry_enable']              = 'Enable';
 $_['entry_dcc_force']           = 'Enabled and expanded';
