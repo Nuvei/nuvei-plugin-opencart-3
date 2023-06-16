@@ -108,9 +108,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         $data['action'] = $this->url->link(NUVEI_CONTROLLER_PATH . '/process_payment')
 			. '&order_id=' . $this->session->data['order_id'];
         
-        if('prod' != $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_version']) {
-            $data['nuvei_sdk_params']['webSdkEnv'] = 'dev';
-        }
+//        if('prod' != $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_version']) {
+//            $data['nuvei_sdk_params']['webSdkEnv'] = 'dev';
+//        }
         
         // check for product with a plan
         if($this->cart->hasRecurringProducts()) {

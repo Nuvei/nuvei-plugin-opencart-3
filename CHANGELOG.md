@@ -2,6 +2,12 @@
 
 ---
 
+# 1.6
+```
+    * Changed Sanbox REST API endpoint.
+    * Removed plugin option to change SDK version.
+```
+
 # 1.5
 ```
     * Changed sourceApplication and webMasterId parameters value.

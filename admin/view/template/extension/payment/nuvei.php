@@ -266,7 +266,7 @@
                                 </div>-->
 
                                 <!-- SDK version -->
-                                <div class="form-group">
+<!--                                <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_sdk_version'); ?></label>
                                     <div class="col-lg-10">
                                         <select name="<?= NUVEI_SETTINGS_PREFIX; ?>sdk_version" class="form-control">
@@ -277,7 +277,7 @@
 
                                         <span class="help-block"><?= $this->language->get('entry_sdk_version_help'); ?></span>
                                     </div>
-                                </div>
+                                </div>-->
 
                                 <!-- DCC -->
                                 <div class="form-group">

@@ -8,13 +8,13 @@
  * @author Nuvei
  */
 
-const NUVEI_PLUGIN_V            = '1.5';
+const NUVEI_PLUGIN_V            = '1.6';
 const NUVEI_PLUGIN_CODE         = 'nuvei';
 const NUVEI_PLUGIN_TITLE        = 'Nuvei';
 
 const NUVEI_LIVE_URL_BASE       = 'https://secure.safecharge.com/ppp/api/v1/';
-const NUVEI_TEST_URL_BASE       = 'https://ppp-test.safecharge.com/ppp/api/v1/';
-const NUVEI_SDK_URL_INT         = 'https://srv-bsf-devpppjs.gw-4u.com/checkoutNext/checkout.js';
+const NUVEI_TEST_URL_BASE       = 'https://ppp-test.nuvei.com/ppp/api/v1/';
+//const NUVEI_SDK_URL_INT         = 'https://srv-bsf-devpppjs.gw-4u.com/checkoutNext/checkout.js';
 const NUVEI_SDK_URL_PROD        = 'https://cdn.safecharge.com/safecharge_resources/v1/checkout/checkout.js';
 const NUVEI_SDK_AUTOCLOSE_URL   = 'https://cdn.safecharge.com/safecharge_resources/v1/websdk/autoclose.html';
 
