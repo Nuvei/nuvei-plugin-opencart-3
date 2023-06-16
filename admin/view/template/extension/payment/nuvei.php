@@ -373,6 +373,18 @@
                                     </div>
                                 </div>
 
+                                <!-- APMs window type -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_apm_window_type'); ?></label>
+                                    <div class="col-lg-10">
+                                        <select name="<?= NUVEI_SETTINGS_PREFIX; ?>apm_window_type" class="form-control">
+                                            <option value="newTab" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'apm_window_type'] == 'newTab'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_new_tab'); ?></option>
+
+                                            <option value="redirect" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'apm_window_type'] == 'redirect'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_redirect'); ?></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
                                 <!-- Auto close APMs popup, only for Sandbox mode -->
                                 <?php if(1 == @$data[NUVEI_SETTINGS_PREFIX . 'test_mode']): ?>
                                     <div class="form-group">
@@ -383,6 +395,8 @@
                                             
                                                 <option value="0" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'auto_close_apm_popup'] == '0'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_no'); ?></option>
                                             </select>
+                                            
+                                            <span class="help-block"><?= $this->language->get('text_apm_popup_help'); ?></span>
                                         </div>
                                     </div>
                                 <?php endif; ?>

@@ -8,6 +8,7 @@
     * Removed plugin option to change SDK version.
     * Added new company logo to the admin.
     * Added SimplyConnect themes.
+    * Added option to open APM window in tab or with redirect.
 ```
 
 # 1.5

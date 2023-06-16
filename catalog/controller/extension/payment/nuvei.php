@@ -102,6 +102,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'logLevel'               => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_log_level'],
             'i18n'                   => json_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_transl'], true),
             'theme'                  => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_theme'],
+            'apmWindowType'          => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type'],
 //            'billingAddress'         => $order_data['billingAddress'],
 //            'userData'               => ['billingAddress' => $order_data['billingAddress']],
         ];
@@ -344,8 +345,6 @@ class ControllerExtensionPaymentNuvei extends Controller
 	}
     
     /**
-     * Function process_payment
-	 * 
      * We use this method with REST API.
      * Here we send the data from the form and prepare it before send it to the API.
      */
@@ -725,6 +724,12 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         # /try to update Order
         
+        $success_url    = $this->url->link(NUVEI_CONTROLLER_PATH . '/success') 
+            . '&order_id=' . $this->session->data['order_id'];
+		
+        $error_url  = $this->url->link(NUVEI_CONTROLLER_PATH . '/fail') 
+            . '&order_id=' . $this->session->data['order_id'];
+        
 		$oo_params = array(
 			'clientUniqueId'	=> $this->session->data['order_id'] . '_' . uniqid(),
             'clientRequestId'   => date('YmdHis', time()) . '_' . uniqid(),
@@ -737,12 +742,16 @@ class ControllerExtensionPaymentNuvei extends Controller
             'urlDetails'        => array(
 				'backUrl'			=> $this->url->link('checkout/checkout', '', true),
 				'notificationUrl'   => $this->url->link(NUVEI_CONTROLLER_PATH . '/callback'),
+				'successUrl'        => $success_url,
+				'pendingUrl'        => $success_url,
+				'failureUrl'        => $error_url,
 			),
 		);
 		
         // change urlDetails
-        if(1 == @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_close_apm_popup']
-            || 0 == $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'test_mode']
+        if('newTab' == @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type']
+            && (1 == @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_close_apm_popup']
+                || 0 == $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'test_mode'])
         ) {
             $oo_params['urlDetails']['successUrl']  = $oo_params['urlDetails']['failureUrl']
                                                     = $oo_params['urlDetails']['pendingUrl']
