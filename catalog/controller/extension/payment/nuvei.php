@@ -742,17 +742,19 @@ class ControllerExtensionPaymentNuvei extends Controller
             'urlDetails'        => array(
 				'backUrl'			=> $this->url->link('checkout/checkout', '', true),
 				'notificationUrl'   => $this->url->link(NUVEI_CONTROLLER_PATH . '/callback'),
-				'successUrl'        => $success_url,
-				'pendingUrl'        => $success_url,
-				'failureUrl'        => $error_url,
+//				'successUrl'        => $success_url,
+//				'pendingUrl'        => $success_url,
+//				'failureUrl'        => $error_url,
 			),
 		);
 		
         // change urlDetails
-        if('newTab' == @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type']
-            && (1 == @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_close_apm_popup']
-                || 0 == $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'test_mode'])
-        ) {
+        if ('redirect' == @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type']) {
+            $oo_params['urlDetails']['successUrl']  = $success_url;
+            $oo_params['urlDetails']['pendingUrl']  = $success_url;
+            $oo_params['urlDetails']['failureUrl']  = $error_url;
+        }
+        elseif (1 == @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_close_apm_popup']) {
             $oo_params['urlDetails']['successUrl']  = $oo_params['urlDetails']['failureUrl']
                                                     = $oo_params['urlDetails']['pendingUrl']
                                                     = NUVEI_SDK_AUTOCLOSE_URL;
