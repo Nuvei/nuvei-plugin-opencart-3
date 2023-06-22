@@ -229,10 +229,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $req_status = $this->get_request_status();
         
-//        if(empty($req_status)) {
-//            $this->return_message('DMN report: the Status parameter is empty.');
-//		}
-        
         if ('pending' == strtolower($req_status)) {
             $this->return_message('Pending DMN, wait for the next one.');
         }
@@ -244,38 +240,17 @@ class ControllerExtensionPaymentNuvei extends Controller
         $trans_type = NUVEI_CLASS::get_param('transactionType', FILTER_SANITIZE_STRING);
 //        $trans_id   = (int) NUVEI_CLASS::get_param('TransactionID');
 //        $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
-//        $dmnType                = NUVEI_CLASS::get_param('dmnType');
 //        $client_request_id      = NUVEI_CLASS::get_param('clientRequestId');
         
         // check for Subscription State DMN
         $this->process_subs_state();
         
-//        if (empty($trans_id)) {
-//            $this->return_message('DMN error - The TransactionID is empty!');
-//		}
-        
         // check for Subscription Payment DMN
         $this->process_subs_payment();
         
-//        if(!$trans_type) {
-//            $this->return_message('DMN report: Transaction Type is empty');
-//		}
-		
-//		if('pending' == strtolower($req_status)) {
-//            $this->return_message('DMN status is Pending. Wait for another status.');
-//		}
-		
         $this->get_order_info_by_dmn();
         
         $order_id = $this->order_info['order_id'];
-        
-        // do not override Order status
-        if($this->order_info['order_status_id'] > 0
-            && $this->order_info['order_status_id'] != $this->config->get(NUVEI_SETTINGS_PREFIX . 'pending_status_id')
-            && 'pending' == strtolower($req_status)
-        ) {
-            $this->return_message('DMN Message - do not override current Order status with Pending');
-        }
         
         # in Case of CPanel Refund DMN
 //        if(in_array($trans_type, array('Credit', 'Refund'))
@@ -304,6 +279,10 @@ class ControllerExtensionPaymentNuvei extends Controller
                 ),
                 'DMN Sale/Auth compare order status and default complete status:'
             );
+            
+            if ('declined' == strtolower($req_status)) {
+                $this->return_message('Declined DMN received. Wait for new payment try.');
+            }
             
 			// if is different than the default Complete status
 			if($this->order_info['order_status_id'] 
@@ -715,31 +694,37 @@ class ControllerExtensionPaymentNuvei extends Controller
             $try_update_order = false;
         }
         
-        // in case when APM popup is changed
-        if ('redirect' == @$nuvei_last_oo_details['apmWindowType']) {
-            if ('redirect' != @$this->plugin_settings['apm_window_type']) {
+        // in case when APM popup type is changed
+        $lood_apmWindowType = isset($nuvei_last_oo_details['apmWindowType'])
+            ? $nuvei_last_oo_details['apmWindowType'] : '';
+        
+        $setting_apm_window_type = isset($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type']) 
+            ? $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type'] : '';
+        
+        if ('redirect' == $lood_apmWindowType) {
+            if ('redirect' != $setting_apm_window_type) {
                 NUVEI_CLASS::create_log(
                     $this->plugin_settings,
                     [
-                        'nuvei_last_oo_details apmWindowType'   => @$nuvei_last_oo_details['apmWindowType'],
-                        'plugin_settings apm_window_type'       => @$this->plugin_settings['apm_window_type'],
+                        '$lood_apmWindowType'       => $lood_apmWindowType,
+                        '$setting_apm_window_type'  => $setting_apm_window_type,
                     ],
                     'New Open order desision - new apmWindowType was set'
                 );
-                
+
                 $try_update_order = false;
             }
         }
-        elseif ('redirect' == @$this->plugin_settings['apm_window_type']) {
+        elseif ('redirect' == $setting_apm_window_type) {
             NUVEI_CLASS::create_log(
-                $this->plugin_settings,
-                [
-                    'nuvei_last_oo_details apmWindowType'   => @$nuvei_last_oo_details['apmWindowType'],
-                    'plugin_settings apm_window_type'       => @$this->plugin_settings['apm_window_type'],
-                ],
-                'New Open order desision - new apmWindowType was set ver.2'
-            );
-            
+                    $this->plugin_settings,
+                    [
+                        '$lood_apmWindowType'       => $lood_apmWindowType,
+                        '$setting_apm_window_type'  => $setting_apm_window_type,
+                    ],
+                    'New Open order desision - new apmWindowType was set'
+                );
+
             $try_update_order = false;
         }
         
@@ -823,8 +808,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->session->data['nuvei_last_oo_details']['sessionToken']       = $resp['sessionToken'];
         $this->session->data['nuvei_last_oo_details']['clientRequestId']    = $resp['clientRequestId'];
         $this->session->data['nuvei_last_oo_details']['orderId']            = $resp['orderId'];
-        $this->session->data['nuvei_last_oo_details']['apmWindowType']
-            = @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type'];
+        $this->session->data['nuvei_last_oo_details']['apmWindowType']      = $setting_apm_window_type;
         $this->session->data['nuvei_last_oo_details']['billingAddress']['country']
             = $oo_params['billingAddress']['country'];
         
