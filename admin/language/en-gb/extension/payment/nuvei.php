@@ -34,6 +34,7 @@ $_['text_tiles']            = 'Tiles';
 $_['text_horizontal']       = 'Horizontal';
 $_['text_new_tab']          = 'New tab';
 $_['text_redirect']         = 'Redirect';
+$_['text_popup']            = 'Popup';
 $_['text_apm_popup_help']   = 'Works only when APM window type is "New tab".';
 
 $_['text_sdk_transl_help']  = 'This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/ui-customization/#text-and-translation" target="_blank">check the Documentation</a>.';

@@ -378,6 +378,8 @@
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_apm_window_type'); ?></label>
                                     <div class="col-lg-10">
                                         <select name="<?= NUVEI_SETTINGS_PREFIX; ?>apm_window_type" class="form-control">
+                                            <option value="" <?php if( @$data[NUVEI_SETTINGS_PREFIX . 'apm_window_type'] == ''): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_popup'); ?></option>
+                                            
                                             <option value="newTab" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'apm_window_type'] == 'newTab'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_new_tab'); ?></option>
 
                                             <option value="redirect" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'apm_window_type'] == 'redirect'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_redirect'); ?></option>
