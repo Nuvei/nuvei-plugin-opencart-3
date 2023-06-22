@@ -715,6 +715,34 @@ class ControllerExtensionPaymentNuvei extends Controller
             $try_update_order = false;
         }
         
+        // in case when APM popup is changed
+        if ('redirect' == @$nuvei_last_oo_details['apmWindowType']) {
+            if ('redirect' != @$this->plugin_settings['apm_window_type']) {
+                NUVEI_CLASS::create_log(
+                    $this->plugin_settings,
+                    [
+                        'nuvei_last_oo_details apmWindowType'   => @$nuvei_last_oo_details['apmWindowType'],
+                        'plugin_settings apm_window_type'       => @$this->plugin_settings['apm_window_type'],
+                    ],
+                    'New Open order desision - new apmWindowType was set'
+                );
+                
+                $try_update_order = false;
+            }
+        }
+        elseif ('redirect' == @$this->plugin_settings['apm_window_type']) {
+            NUVEI_CLASS::create_log(
+                $this->plugin_settings,
+                [
+                    'nuvei_last_oo_details apmWindowType'   => @$nuvei_last_oo_details['apmWindowType'],
+                    'plugin_settings apm_window_type'       => @$this->plugin_settings['apm_window_type'],
+                ],
+                'New Open order desision - new apmWindowType was set ver.2'
+            );
+            
+            $try_update_order = false;
+        }
+        
         if ($try_update_order) {
             $resp = $this->update_order();
             
@@ -795,6 +823,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->session->data['nuvei_last_oo_details']['sessionToken']       = $resp['sessionToken'];
         $this->session->data['nuvei_last_oo_details']['clientRequestId']    = $resp['clientRequestId'];
         $this->session->data['nuvei_last_oo_details']['orderId']            = $resp['orderId'];
+        $this->session->data['nuvei_last_oo_details']['apmWindowType']
+            = @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type'];
         $this->session->data['nuvei_last_oo_details']['billingAddress']['country']
             = $oo_params['billingAddress']['country'];
         
