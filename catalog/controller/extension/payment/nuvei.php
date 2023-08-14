@@ -752,6 +752,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 			'userDetails'       => $this->order_addresses['billingAddress'],
 			'billingAddress'	=> $this->order_addresses['billingAddress'],
             'shippingAddress'   => $this->order_addresses['shippingAddress'],
+            'userTokenId'       => $this->order_addresses['billingAddress']['email'],
             'urlDetails'        => array(
 				'backUrl'			=> $this->url->link('checkout/checkout', '', true),
 				'notificationUrl'   => $this->url->link(NUVEI_CONTROLLER_PATH . '/callback'),
@@ -775,14 +776,14 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         # use or not UPOs
         // in case there is a Product with a Payment Plan
-        if(!empty($rebilling_params['merchantDetails']['customField3'])) {
-            $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
-        }
-        elseif(1 == $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_upos'] 
-            && 1 == $this->is_user_logged
-        ) {
-            $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
-        }
+//        if(!empty($rebilling_params['merchantDetails']['customField3'])) {
+//            $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
+//        }
+//        elseif(1 == $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_upos'] 
+//            && 1 == $this->is_user_logged
+//        ) {
+//            $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
+//        }
         # /use or not UPOs
         
         $oo_params = array_merge_recursive($oo_params, $rebilling_params);

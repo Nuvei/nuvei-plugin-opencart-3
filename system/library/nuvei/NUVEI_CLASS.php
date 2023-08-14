@@ -191,7 +191,7 @@ class NUVEI_CLASS
                 
                 'merchantDetails'	=> array(
 					'customField1' => NUVEI_SOURCE_APP . ' ' . NUVEI_PLUGIN_V,
-					'customField2' => $time, // time when we create request
+					'customField2' => time(), // time when we create request
 				),
                 
                 'deviceDetails'     => self::get_device_details(),

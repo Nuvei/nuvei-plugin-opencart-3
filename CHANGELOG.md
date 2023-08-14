@@ -9,6 +9,8 @@
     * Added new company logo to the admin.
     * Added SimplyConnect themes.
     * Added option how to open APM window.
+    * Allways pass userTokenId into OpenOrder request.
+    * Pass timestamp instead date-time in the requests.
 ```
 
 # 1.5
