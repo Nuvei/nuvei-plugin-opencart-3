@@ -183,8 +183,8 @@ class NUVEI_CLASS
         // set here some of the mandatory parameters
         $params = array_merge_recursive(
             array(
-                'merchantId'        => $settings[NUVEI_SETTINGS_PREFIX . 'merchantId'],
-                'merchantSiteId'    => $settings[NUVEI_SETTINGS_PREFIX . 'merchantSiteId'],
+                'merchantId'        => trim($settings[NUVEI_SETTINGS_PREFIX . 'merchantId']),
+                'merchantSiteId'    => trim($settings[NUVEI_SETTINGS_PREFIX . 'merchantSiteId']),
                 'timeStamp'         => $time,
                 'webMasterId'       => 'OpenCart ' . VERSION . '; Plugin v' . NUVEI_PLUGIN_V,
                 'sourceApplication' => NUVEI_SOURCE_APP,
@@ -220,7 +220,7 @@ class NUVEI_CLASS
             $concat .= $params[$key];
         }
         
-        $concat .= $settings[NUVEI_SETTINGS_PREFIX . 'secret'];
+        $concat .= trim($settings[NUVEI_SETTINGS_PREFIX . 'secret']);
         
         $params['checksum'] = hash($settings[NUVEI_SETTINGS_PREFIX . 'hash'], $concat);
         // /calculate the checksum

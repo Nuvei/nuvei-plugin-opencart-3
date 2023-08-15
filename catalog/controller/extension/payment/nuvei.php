@@ -83,8 +83,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             'showResponseMessage'    => false,
             'sessionToken'           => $order_data['sessionToken'],
             'env'                    => 1 == $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'test_mode'] ? 'test' : 'prod',
-            'merchantId'             => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'merchantId'],
-            'merchantSiteId'         => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'merchantSiteId'],
+            'merchantId'             => trim($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'merchantId']),
+            'merchantSiteId'         => trim($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'merchantSiteId']),
             'country'                => $order_data['billingAddress']['country'],
             'currency'               => $order_data['currency'],
             'amount'                 => $order_data['amount'],
@@ -373,7 +373,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 		if (!empty($advanceResponseChecksum)) {
             $str = hash(
                 $this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'),
-                $this->config->get(NUVEI_SETTINGS_PREFIX . 'secret')
+                trim($this->config->get(NUVEI_SETTINGS_PREFIX . 'secret'))
                     . NUVEI_CLASS::get_param('totalAmount')
                     . NUVEI_CLASS::get_param('currency')
                     . NUVEI_CLASS::get_param('responseTimeStamp')
@@ -407,7 +407,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 		$dmn_params = array_diff_key($request_arr, $custom_params);
 		$concat     = implode('', $dmn_params);
 		
-		$concat_final = $concat . $this->config->get(NUVEI_SETTINGS_PREFIX . 'secret');
+		$concat_final = $concat . trim($this->config->get(NUVEI_SETTINGS_PREFIX . 'secret'));
 		$checksum     = hash($this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'), $concat_final);
 		
 		if ($responsechecksum !== $checksum) {
@@ -751,9 +751,6 @@ class ControllerExtensionPaymentNuvei extends Controller
             'urlDetails'        => array(
 				'backUrl'			=> $this->url->link('checkout/checkout', '', true),
 				'notificationUrl'   => $this->url->link(NUVEI_CONTROLLER_PATH . '/callback'),
-//				'successUrl'        => $success_url,
-//				'pendingUrl'        => $success_url,
-//				'failureUrl'        => $error_url,
 			),
 		);
 		
@@ -946,51 +943,6 @@ class ControllerExtensionPaymentNuvei extends Controller
 		)));
 	}
 	
-    /*
-    private function remove_upo()
-    {
-        if(empty($this->customer->getEmail())) {
-            echo json_encode(array(
-                'status'    => 0,
-                'msg'       => $this->language->get('nuvei_error_logged_user')
-            ));
-            exit;
-        }
-        
-        $timeStamp = gmdate('YmdHis', time());
-			
-		$params = array(
-			'merchantId'            => $this->config->get(NUVEI_SETTINGS_PREFIX . 'merchantId'),
-			'merchantSiteId'        => $this->config->get(NUVEI_SETTINGS_PREFIX . 'merchantSiteId'),
-			'userTokenId'           => $this->customer->getEmail(),
-			'clientRequestId'       => $timeStamp . '_' . uniqid(),
-			'userPaymentOptionId'   => (int) $this->request->post['upoId'],
-			'timeStamp'             => $timeStamp,
-		);
-		
-		$params['checksum'] = hash(
-			$this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'),
-			implode('', $params) 
-                . $this->config->get(NUVEI_SETTINGS_PREFIX . 'secret')
-		);
-		
-		$resp = NUVEI_CLASS::call_rest_api('deleteUPO', $params);
-        
-        if (empty($resp['status']) || 'SUCCESS' != $resp['status']) {
-			$msg = !empty($resp['reason']) ? $resp['reason'] : '';
-			
-			echo json_encode(array(
-				'status'    => 0,
-				'msg'       => $msg
-            ));
-			exit;
-		}
-		
-		echo json_encode(array('status' => 1));
-		exit;
-    }
-     */
-
     /**
      * Save log, return a message to the sender and exit the code.
      * 

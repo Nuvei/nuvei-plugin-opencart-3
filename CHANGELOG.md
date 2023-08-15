@@ -12,6 +12,7 @@
     * Allways pass userTokenId into OpenOrder request.
     * Pass timestamp instead date-time in the requests.
     * Return code 400 to the Cashier, when the plugin did not find an OC Order nby the DMN data.
+    * Merchant credentials are trimmed after get them.
 ```
 
 # 1.5
