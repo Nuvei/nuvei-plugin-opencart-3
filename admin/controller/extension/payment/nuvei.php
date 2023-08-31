@@ -304,7 +304,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             
             $this->data['payment_custom_field'][] = array(
                 'status'                => 'approved',
-                'clientUniqueId'        => $order_id . '_' . $request_amount . '_' . date('YmdHis') . '_' . uniqid(),
+                'clientUniqueId'        => $order_id . '_' . uniqid(),
+                'transactionType'       => 'Refund',
                 'transactionType'       => 'Refund',
                 'transactionId'         => '',
                 'relatedTransactionId'  => $last_sale_tr['transactionId'],
@@ -332,12 +333,11 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         // /manual refund
         
-        $clientUniqueId = uniqid();
-		$time           = date('YmdHis');
+//        $clientUniqueId = uniqid();
+		$time = date('YmdHis');
 		
         $ref_parameters = array(
-			'clientUniqueId'        => $order_id . '_' . $request_amount . '_' . $time . '_' . $clientUniqueId,
-            'clientRequestId'       => $time . '_' . uniqid(),
+			'clientUniqueId'        => $order_id . '_' . uniqid(),
 			'amount'                => $this->request->post['amount'],
 			'currency'              => $this->data['currency_code'],
 			'relatedTransactionId'  => $last_sale_tr['transactionId'],
@@ -568,8 +568,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         # normal Void or Settle
         $params = array(
-            'clientRequestId'       => $time . '_' . $last_allowed_trans['transactionId'],
-            'clientUniqueId'        => uniqid(),
+//            'clientRequestId'       => $time . '_' . $last_allowed_trans['transactionId'],
+            'clientUniqueId'        => $order_id . '_' . uniqid(),
             'amount'                => $amount,
             'currency'              => $this->data['currency_code'],
             'relatedTransactionId'  => $last_allowed_trans['transactionId'],
@@ -768,7 +768,6 @@ class ControllerExtensionPaymentNuvei extends Controller
 		$apms_params		= array(
 			'sessionToken'      => $session_token,
 			'languageCode'      => $this->language->get('code'),
-            'clientRequestId'   => date('YmdHis', time()) . '_' . uniqid(),
 		);
         
 		$res = NUVEI_CLASS::call_rest_api(
@@ -813,8 +812,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         $resp = NUVEI_CLASS::call_rest_api(
             'getSessionToken', 
             $this->plugin_settings, 
-            ['merchantId', 'merchantSiteId', 'clientRequestId', 'timeStamp'],
-            ['clientRequestId'   => date('YmdHis', time()) . '_' . uniqid()]
+            ['merchantId', 'merchantSiteId', 'clientRequestId', 'timeStamp']//,
+            //['clientRequestId'   => date('YmdHis', time()) . '_' . uniqid()]
         );
         
         if(!empty($resp['sessionToken'])) {

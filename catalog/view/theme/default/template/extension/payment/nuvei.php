@@ -84,7 +84,9 @@
         }
 
         if(resp.hasOwnProperty('result')) {
-            if(resp.result == 'APPROVED' && resp.hasOwnProperty('transactionId')) {
+            if( (resp.result == 'APPROVED' || resp.result == 'PENDING')
+                && resp.hasOwnProperty('transactionId')
+            ) {
                 $('#sc_transaction_id').val(resp.transactionId);
                 $('form#nuvei_submit').submit();
 

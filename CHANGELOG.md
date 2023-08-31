@@ -9,10 +9,12 @@
     * Added new company logo to the admin.
     * Added SimplyConnect themes.
     * Added option how to open APM window.
+    * Added Auto-Void logic.
     * Allways pass userTokenId into OpenOrder request.
     * Pass timestamp instead date-time in the requests.
     * Return code 400 to the Cashier, when the plugin did not find an OC Order nby the DMN data.
     * Merchant credentials are trimmed after get them.
+    * Changes in clientUniqueId parameter - in it pass the Order ID and custom generated string.
 ```
 
 # 1.5

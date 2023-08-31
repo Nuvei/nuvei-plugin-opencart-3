@@ -181,23 +181,20 @@ class NUVEI_CLASS
         $time = date('YmdHis', time());
        
         // set here some of the mandatory parameters
-        $params = array_merge_recursive(
+        $params = array_merge(
             array(
+                'clientRequestId'   => $time . '_' . uniqid(),
                 'merchantId'        => trim($settings[NUVEI_SETTINGS_PREFIX . 'merchantId']),
                 'merchantSiteId'    => trim($settings[NUVEI_SETTINGS_PREFIX . 'merchantSiteId']),
                 'timeStamp'         => $time,
                 'webMasterId'       => 'OpenCart ' . VERSION . '; Plugin v' . NUVEI_PLUGIN_V,
                 'sourceApplication' => NUVEI_SOURCE_APP,
-                
-                'merchantDetails'	=> array(
-					'customField1' => NUVEI_SOURCE_APP . ' ' . NUVEI_PLUGIN_V,
-					'customField2' => time(), // time when we create request
-				),
-                
                 'deviceDetails'     => self::get_device_details(),
             ),
             $params
         );
+        
+        $params['merchantDetails']['customField2'] = time();
         
         // calculate the checksum
         $concat = '';
