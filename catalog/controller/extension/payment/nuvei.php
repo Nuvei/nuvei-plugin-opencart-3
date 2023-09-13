@@ -1077,32 +1077,32 @@ class ControllerExtensionPaymentNuvei extends Controller
 //        }
         
         // default case
-//        if (is_array($merchant_uid_arr)
-//            && count($merchant_uid_arr) > 1
-//            && is_numeric($merchant_uid_arr[0])
-//        ) {
-//            $order_id = $merchant_uid_arr[0];
-//        }
-//        // CPanel made action
-//        elseif (!empty($relatedTransactionId)) {
-//            $query = $this->db->query(
-//                'SELECT order_id FROM ' . DB_PREFIX . 'order '
-//                . 'WHERE custom_field = ' . $relatedTransactionId
-//            );
-//            
-//            $order_id = (int) @$query->row['order_id'];
-//        }
-//        // Subscription case
-//        elseif (in_array($dmn_type, ['subscription', 'subscriptionPayment'])) {
-//            $client_req_id_arr = explode('_', NUVEI_CLASS::get_param('clientRequestId'));
-//            
-//            if (is_array($client_req_id_arr)
-//                && count($client_req_id_arr) > 0
-//                && is_numeric($client_req_id_arr[0])
-//            ) {
-//                $order_id = $client_req_id_arr[0];
-//            }
-//        }
+        if (is_array($merchant_uid_arr)
+            && count($merchant_uid_arr) > 1
+            && is_numeric($merchant_uid_arr[0])
+        ) {
+            $order_id = $merchant_uid_arr[0];
+        }
+        // CPanel made action
+        elseif (!empty($relatedTransactionId)) {
+            $query = $this->db->query(
+                'SELECT order_id FROM ' . DB_PREFIX . 'order '
+                . 'WHERE custom_field = ' . $relatedTransactionId
+            );
+            
+            $order_id = (int) @$query->row['order_id'];
+        }
+        // Subscription case
+        elseif (in_array($dmn_type, ['subscription', 'subscriptionPayment'])) {
+            $client_req_id_arr = explode('_', NUVEI_CLASS::get_param('clientRequestId'));
+            
+            if (is_array($client_req_id_arr)
+                && count($client_req_id_arr) > 0
+                && is_numeric($client_req_id_arr[0])
+            ) {
+                $order_id = $client_req_id_arr[0];
+            }
+        }
         
         $this->order_info = $this->model_checkout_order->getOrder($order_id);
         
@@ -1111,22 +1111,22 @@ class ControllerExtensionPaymentNuvei extends Controller
 //            $this->return_message('DMN error - There is no order info, invalid Order ID.');
             
             // create Auto-Void
-            $curr_time          = time();
-            $order_request_time	= NUVEI_CLASS::get_param('customField2'); // time of create/update order
-            
-            if (!is_numeric($order_request_time)) {
-                $order_request_time = strtotime($order_request_time);
-            }
-            
-            if ($curr_time - $order_request_time > 1800) {
-                $this->create_auto_void();
-            }
+//            $curr_time          = time();
+//            $order_request_time	= NUVEI_CLASS::get_param('customField2'); // time of create/update order
+//            
+//            if (!is_numeric($order_request_time)) {
+//                $order_request_time = strtotime($order_request_time);
+//            }
+//            
+//            if ($curr_time - $order_request_time > 1800) {
+//                $this->create_auto_void();
+//            }
             // /create Auto-Void
             
-            if (in_array($trans_type, ['Auth', 'Sale'])) {
-                http_response_code(400);
-                $this->return_message('There is no order info, Let\'s wait one more DMN try.');
-            }
+//            if (in_array($trans_type, ['Auth', 'Sale'])) {
+//                http_response_code(400);
+//                $this->return_message('There is no order info, Let\'s wait one more DMN try.');
+//            }
             
             http_response_code(200);
             $this->return_message('There is no order info.');

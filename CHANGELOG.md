@@ -2,6 +2,13 @@
 
 ---
 
+# 1.7
+```
+    * Fixed the bug into DMN logic.
+    * Removed tha Auto-Void logic.
+    * Removed return code 400 to the Cashier, when the plugin did not find an OC Order by the DMN data.
+```
+
 # 1.6
 ```
     * Changed Sanbox REST API endpoint.
@@ -12,7 +19,7 @@
     * Added Auto-Void logic.
     * Allways pass userTokenId into OpenOrder request.
     * Pass timestamp instead date-time in the requests.
-    * Return code 400 to the Cashier, when the plugin did not find an OC Order nby the DMN data.
+    * Return code 400 to the Cashier, when the plugin did not find an OC Order by the DMN data.
     * Merchant credentials are trimmed after get them.
     * Changes in clientUniqueId parameter - in it pass the Order ID and custom generated string.
 ```
