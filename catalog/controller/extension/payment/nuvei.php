@@ -30,24 +30,26 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->order_info       = $this->model_checkout_order->getOrder($this->session->data['order_id']);
         $this->order_addresses  = $this->get_order_addresses();
         $this->is_user_logged   = !empty($this->session->data['customer_id']) ? 1 : 0;
+        $products               = $this->cart->getProducts();
 		
+        // the pre-payment Ajax call
         if(isset($this->request->server['HTTP_X_REQUESTED_WITH'])
             && 'XMLHttpRequest' == $this->request->server['HTTP_X_REQUESTED_WITH']
             && NUVEI_CONTROLLER_PATH == $this->request->get['route']
         ) {
-            $this->ajax_call();
+            $this->ajax_call($products);
             exit;
         }
         
         // before call Open Order check for not allowed combination of prdocusts
         if (count($this->cart->getRecurringProducts()) > 0
-            && count($this->cart->getProducts()) > 1
+            && count($products) > 1
         ) {
             exit('<div class="alert alert-danger">'. $this->language->get('error_nuvei_products') .'</div>');
         }
         
         // Open Order
-        $order_data = $this->open_order();
+        $order_data = $this->open_order($products);
 		
 		if(empty($order_data) || empty($order_data['sessionToken'])) {
 			NUVEI_CLASS::create_log($this->plugin_settings, $order_data, 'Open Order problem with the response', 'CRITICAL');
@@ -103,16 +105,10 @@ class ControllerExtensionPaymentNuvei extends Controller
             'i18n'                   => json_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_transl'], true),
             'theme'                  => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_theme'],
             'apmWindowType'          => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type'],
-//            'billingAddress'         => $order_data['billingAddress'],
-//            'userData'               => ['billingAddress' => $order_data['billingAddress']],
         ];
         
         $data['action'] = $this->url->link(NUVEI_CONTROLLER_PATH . '/process_payment')
 			. '&order_id=' . $this->session->data['order_id'];
-        
-//        if('prod' != $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_version']) {
-//            $data['nuvei_sdk_params']['webSdkEnv'] = 'dev';
-//        }
         
         // check for product with a plan
         if($this->cart->hasRecurringProducts()) {
@@ -646,7 +642,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->new_order_status = $status_id;
     }
     
-	private function open_order()
+	private function open_order($products)
     {
         NUVEI_CLASS::create_log($this->plugin_settings, 'open_order()');
         
@@ -724,7 +720,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         
         if ($try_update_order) {
-            $resp = $this->update_order();
+            $resp = $this->update_order($products);
             
             if (!empty($resp['status']) && 'SUCCESS' == $resp['status']) {
                 return $resp;
@@ -740,7 +736,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         
 		$oo_params = array(
 			'clientUniqueId'	=> $this->session->data['order_id'] . '_' . uniqid(),
-//            'clientRequestId'   => date('YmdHis', time()) . '_' . uniqid(),
 			'amount'            => $amount,
             'transactionType'	=> (float) $amount == 0 ? 'Auth' : $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'payment_action'],
 			'currency'          => $this->order_info['currency_code'],
@@ -783,14 +778,15 @@ class ControllerExtensionPaymentNuvei extends Controller
 			return array();
 		}
         
-        // set them to session for the check before submit the data to the webSDK
+        // set them to session for the check before submit the data to the SDK
+        $this->session->data['nuvei_last_oo_details']['productsHash']       = md5(serialize($products));
         $this->session->data['nuvei_last_oo_details']['amount']             = $oo_params['amount'];
         $this->session->data['nuvei_last_oo_details']['transactionType']    = $oo_params['transactionType'];
         $this->session->data['nuvei_last_oo_details']['sessionToken']       = $resp['sessionToken'];
         $this->session->data['nuvei_last_oo_details']['clientRequestId']    = $resp['clientRequestId'];
         $this->session->data['nuvei_last_oo_details']['orderId']            = $resp['orderId'];
         $this->session->data['nuvei_last_oo_details']['apmWindowType']      = $setting_apm_window_type;
-        $this->session->data['nuvei_last_oo_details']['userTokenId']        = $oo_params['userTokenId'];;
+        $this->session->data['nuvei_last_oo_details']['userTokenId']        = $oo_params['userTokenId'];
         $this->session->data['nuvei_last_oo_details']['billingAddress']['country']
             = $oo_params['billingAddress']['country'];
         
@@ -799,7 +795,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 		return $oo_params;
 	}
     
-    private function update_order()
+    private function update_order($products)
     {
         NUVEI_CLASS::create_log($this->plugin_settings, 'update_order()');
         
@@ -852,7 +848,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         # Success
 		if (!empty($resp['status']) && 'SUCCESS' == $resp['status']) {
-            $this->session->data['nuvei_last_oo_details']['amount'] = $params['amount'];
+            $this->session->data['nuvei_last_oo_details']['productsHash']   = md5(serialize($products));
+            $this->session->data['nuvei_last_oo_details']['amount']         = $params['amount'];
             $this->session->data['nuvei_last_oo_details']['billingAddress']['country'] 
                 = $params['billingAddress']['country'];
             
@@ -907,9 +904,36 @@ class ControllerExtensionPaymentNuvei extends Controller
      * clicked on SDK Pay button.
      * Here we will make last check for product quality.
      */
-	private function ajax_call()
+	private function ajax_call($products)
     {
 		NUVEI_CLASS::create_log($this->plugin_settings, 'ajax_call()');
+        
+        $nuvei_last_oo_details = isset($this->session->data['nuvei_last_oo_details'])
+            ? $this->session->data['nuvei_last_oo_details'] : [];
+        
+        // success
+        if (!empty($nuvei_last_oo_details['productsHash'])
+            && $nuvei_last_oo_details['productsHash'] == md5(serialize($products))
+        ) {
+            exit(json_encode(array(
+                'success' => 1,
+            )));
+        }
+        
+        NUVEI_CLASS::create_log(
+            $this->plugin_settings, 
+            [
+                'products'      => $products,
+                'products hash' => md5(serialize($products)),
+                'session hash'  => @$nuvei_last_oo_details['productsHash'],
+            ]
+        );
+        
+        // error
+        exit(json_encode(array(
+            'success' => 0,
+        )));
+        
         
         // check for product quantity
 //        $this->load->model('catalog/product');
@@ -931,16 +955,16 @@ class ControllerExtensionPaymentNuvei extends Controller
 //        }
         // /check for product quantity
         
-        $oo_data = $this->open_order();
-		
-		if(empty($oo_data)) {
-			exit(json_encode(array('status' => 'error')));
-		}
-		
-		exit(json_encode(array(
-			'status'		=> 'success',
-			'sessionToken'	=> $oo_data['sessionToken']
-		)));
+//        $oo_data = $this->open_order();
+//		
+//		if(empty($oo_data)) {
+//			exit(json_encode(array('status' => 'error')));
+//		}
+//		
+//		exit(json_encode(array(
+//			'status'		=> 'success',
+//			'sessionToken'	=> $oo_data['sessionToken']
+//		)));
 	}
 	
     /**

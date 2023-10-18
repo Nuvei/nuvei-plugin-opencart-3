@@ -2,6 +2,11 @@
 
 ---
 
+# 1.8
+```
+    * Removed the updateOrder reques on SDK pre-payment event.
+```
+
 # 1.7
 ```
     * Fixed the bug into DMN logic.
