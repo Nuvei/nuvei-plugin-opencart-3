@@ -530,6 +530,37 @@ class NUVEI_CLASS
 	}
     
     /**
+     * Check for newer version of the plugin.
+     */
+    public static function get_plugin_git_version()
+    {
+        $curr_v = (int) str_replace('.', '', NUVEI_PLUGIN_V);
+        
+        $matches    = array();
+        $ch         = curl_init();
+
+        curl_setopt(
+            $ch,
+            CURLOPT_URL,
+            'https://raw.githubusercontent.com/Nuvei/nuvei-plugin-opencart-3/main/CHANGELOG.md'
+        );
+
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        $file_text = curl_exec($ch);
+        curl_close($ch);
+
+        preg_match('/#\s([0-9]\.[0-9])/', $file_text, $matches);
+
+        if (!isset($matches[1])) {
+            return 0;
+        }
+
+        return (int) str_replace('.', '', trim($matches[1]));
+    }
+    
+    /**
 	 * Get the URL to the endpoint, without the method name, based on the site mode.
 	 * 
      * @param array $settings The plugin settings.

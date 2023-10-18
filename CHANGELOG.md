@@ -5,6 +5,7 @@
 # 1.8
 ```
     * Removed the updateOrder reques on SDK pre-payment event.
+    * Changes into the logic who check for plugin updates.
 ```
 
 # 1.7
