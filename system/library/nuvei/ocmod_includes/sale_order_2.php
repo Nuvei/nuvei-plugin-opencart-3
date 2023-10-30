@@ -1,9 +1,12 @@
 <?php
 
+require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR 
+    . 'nuvei' . DIRECTORY_SEPARATOR . 'NUVEI_CLASS.php';
+
 try {
     foreach($results as $key => $order) {
         $refunds_sum = 0; // it is converted
-
+        
         $nuvei_query = $this->db->query('SELECT payment_custom_field FROM `' . DB_PREFIX 
             . 'order` WHERE order_id = ' . (int) $order['order_id']);
 
@@ -11,13 +14,18 @@ try {
             $nuvei_data = json_decode($nuvei_query->rows[0]["payment_custom_field"], true);
 
             foreach($nuvei_data as $nuv_rec) {
-                if(
-                    !empty($nuv_rec['status'])
+                if(!empty($nuv_rec['status'])
                     && 'approved' == $nuv_rec['status']
                     && !empty($nuv_rec['transactionType'])
                     && in_array($nuv_rec['transactionType'], array('Credit', 'Refund'))
                 ) {
                     $refunds_sum += $nuv_rec['totalAmount'];
+                }
+                
+                if (in_array($nuv_rec['transactionType'], array('Auth', 'Sale'))
+                    && !empty($nuv_rec['totalCurrAlert'])
+                ) {
+                    $data['orders'][$key]['order_status'] .= '&nbsp;<a title="Check transaction total/currency!" class="btn btn-warning"><i class="fa fa-warning"></i></a>';
                 }
             }
 

@@ -14,11 +14,12 @@ require_once DIR_SYSTEM . 'library' . DIRECTORY_SEPARATOR . 'nuvei'
  */
 class ControllerExtensionPaymentNuvei extends Controller
 {
-    private $is_user_logged;
-	private $order_info;
     private $plugin_settings    = [];
     private $order_addresses    = [];
     private $new_order_status   = 0;
+    private $total_curr_alert   = false;
+    private $is_user_logged;
+	private $order_info;
     
 	public function index()
     {
@@ -217,12 +218,14 @@ class ControllerExtensionPaymentNuvei extends Controller
         ### Manual stop DMN is possible only in test mode
 //        die('manually stoped');
         
+        // exit
         if ('CARD_TOKENIZATION' == NUVEI_CLASS::get_param('type')) {
             $this->return_message('CARD_TOKENIZATION DMN, wait for the next one.');
         }
         
         $req_status = $this->get_request_status();
         
+        // exit
         if ('pending' == strtolower($req_status)) {
             $this->return_message('Pending DMN, wait for the next one.');
         }
@@ -553,14 +556,29 @@ class ControllerExtensionPaymentNuvei extends Controller
                 }
                 
                 // check for different Order Amount
-                if(in_array($transactionType, array('Sale', 'Settle')) && $order_total != $total_amount) {
-                    $msg = $this->language->get('Attention - the Order total is ') 
-                        . $this->order_info['currency_code'] . ' ' . $order_total
-                        . $this->language->get(', but the Captured amount is ')
-                        . NUVEI_CLASS::get_param('currency', FILTER_SANITIZE_STRING)
-                        . ' ' . $total_amount . '.';
+                if(in_array($transactionType, array('Sale', 'Auth'))) {
+                    $original_amount        = (float) NUVEI_CLASS::get_param('customField1');
+                    $original_curr          = NUVEI_CLASS::get_param('customField4');
+                    
+                    if ($order_total != $total_amount && $order_total != $original_amount) {
+                        $this->total_curr_alert = true;
+                    }
+                    
+                    if ($this->order_info['currency_code'] != NUVEI_CLASS::get_param('currency') 
+                        && $this->order_info['currency_code'] != $original_curr
+                    ) {
+                        $this->total_curr_alert = true;
+                    }
+                    
+                    if ($this->total_curr_alert) {
+                        $msg = $this->language->get('Attention - the Order total is ') 
+                            . $this->order_info['currency_code'] . ' ' . $order_total
+                            . $this->language->get(', but the Captured amount is ')
+                            . NUVEI_CLASS::get_param('currency', FILTER_SANITIZE_STRING)
+                            . ' ' . $total_amount . '!';
 
-                    $this->model_checkout_order->addOrderHistory($order_id, $status_id, $msg, false);
+                        $this->model_checkout_order->addOrderHistory($order_id, $status_id, $msg, false);
+                    }
                 }
                 
 				$message .= $comment_details;
@@ -763,6 +781,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $oo_params = array_merge_recursive($oo_params, $rebilling_params);
         
+        $oo_params['merchantDetails']['customField1'] = $amount;
+        $oo_params['merchantDetails']['customField4'] = $this->order_info['currency_code'];
+        
 		$resp = NUVEI_CLASS::call_rest_api(
             'openOrder',
             $this->plugin_settings,
@@ -828,7 +849,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             
             'items'				=> array(
 				array(
-					'name'		=> 'oc_order',
+					'name'		=> 'oc3_order',
 					'price'		=> $amount,
 					'quantity'	=> 1
 				)
@@ -838,6 +859,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         // rebiling parameters
         $rebilling_params   = $this->preprare_rebilling_params();
         $params             = array_merge_recursive($params, $rebilling_params);
+        
+        $oo_params['merchantDetails']['customField1'] = $amount;
+        $oo_params['merchantDetails']['customField4'] = $this->order_info['currency_code'];
         
 		$resp = NUVEI_CLASS::call_rest_api(
             'updateOrder', 
@@ -1246,6 +1270,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'currency'              => NUVEI_CLASS::get_param('currency', FILTER_SANITIZE_STRING),
             'paymentMethod'         => NUVEI_CLASS::get_param('payment_method', FILTER_SANITIZE_STRING),
             'responseTimeStamp'     => NUVEI_CLASS::get_param('responseTimeStamp', FILTER_SANITIZE_STRING),
+            'totalCurrAlert'        => $this->total_curr_alert,
         );
         
         // all data
