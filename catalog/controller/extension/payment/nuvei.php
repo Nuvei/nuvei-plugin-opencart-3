@@ -1270,6 +1270,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             'currency'              => NUVEI_CLASS::get_param('currency', FILTER_SANITIZE_STRING),
             'paymentMethod'         => NUVEI_CLASS::get_param('payment_method', FILTER_SANITIZE_STRING),
             'responseTimeStamp'     => NUVEI_CLASS::get_param('responseTimeStamp', FILTER_SANITIZE_STRING),
+            'originalTotal'         => NUVEI_CLASS::get_param('customField1', FILTER_SANITIZE_STRING),
+            'originalCurrency'      => NUVEI_CLASS::get_param('customField4', FILTER_SANITIZE_STRING),
             'totalCurrAlert'        => $this->total_curr_alert,
         );
         
