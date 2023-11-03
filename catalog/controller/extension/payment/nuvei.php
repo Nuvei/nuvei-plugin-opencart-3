@@ -111,8 +111,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         $data['action'] = $this->url->link(NUVEI_CONTROLLER_PATH . '/process_payment')
 			. '&order_id=' . $this->session->data['order_id'];
         
-        // check for product with a plan
-        if($this->cart->hasRecurringProducts()) {
+        // check for product with a plan or Zero-Total Order
+        if($this->cart->hasRecurringProducts() || 0 == $order_data['amount']) {
             $data['nuvei_sdk_params']['pmWhitelist'][] = 'cc_card';
             unset($data['nuvei_sdk_params']['pmBlacklist']);
         }

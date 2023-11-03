@@ -167,11 +167,11 @@
     function showNuveiCheckout() {
         console.log('showNuveiCheckout()');
 
-        nuveiCheckoutSdkParams              = <?= json_encode($data['nuvei_sdk_params']); ?>;
+        nuveiCheckoutSdkParams = <?= json_encode($data['nuvei_sdk_params']); ?>;
         
         console.log(nuveiCheckoutSdkParams);
         
-        nuveiCheckoutSdkParams.prePayment	= nuveiPrePayment;
+        nuveiCheckoutSdkParams.prePayment   = nuveiPrePayment;
         nuveiCheckoutSdkParams.onResult		= nuveiAfterSdkResponse;
 
         checkout(nuveiCheckoutSdkParams);
