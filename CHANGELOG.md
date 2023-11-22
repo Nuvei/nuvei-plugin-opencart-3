@@ -7,6 +7,7 @@
     * Removed the updateOrder reques on SDK pre-payment event.
     * Changes into the logic who check for plugin updates.
     * Check if Order total and currency are correct when DMN come.
+    * Added plugin version into plugin settings Help Tools.
 ```
 
 # 1.7

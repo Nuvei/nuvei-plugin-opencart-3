@@ -45,7 +45,8 @@ $_['text_block_pms_help']   = 'For examples <a href="https://docs.nuvei.com/docu
 
 $_['text_plan_id_help']     = 'For Rebilling you need at least one Rebilling Plan. Creat it, and get its number from the CPanel.';
 
-$_['text_change_order_status'] = 'Change the Order status to Pending on successful UpdateOrder request. By default OpenCart keep not finished Orders hidden and we do not recommend using Yes option on Prod.';
+$_['text_change_order_status']  = 'Change the Order status to Pending on successful UpdateOrder request. By default OpenCart keep not finished Orders hidden and we do not recommend using Yes option on Prod.';
+$_['text_plugin_version']       = 'Plugin version is different from the Modification version.';
 
 $_['text_no_github_plugin_version']     = 'Nuvei message - can not find the plugin version into github changelog file.';
 $_['text_github_plugin_same_version']   = 'Git version is same as the current plugin version.';
@@ -96,6 +97,7 @@ $_['entry_sdk_transl']          = 'SDK translations:';
 $_['entry_donwload_p_plans']    = 'Download Payment Plans:';
 $_['entry_dmn_url']             = 'Notification (DMN) URL:';
 $_['entry_change_order_status'] = 'Auto change the Order status:';
+$_['entry_plugin_version']      = 'Plugin Version:';
 $_['entry_rebilling_plan_id']   = 'Rebilling Plan ID:';
 
 $_['entry_apm_window_type']         = 'APM window type:';

@@ -73,7 +73,8 @@ class ControllerExtensionPaymentNuvei extends Controller
 		}
         // /validate on save
         
-        $this->data['NUVEI_SETTINGS_PREFIX'] = NUVEI_SETTINGS_PREFIX;
+        $this->data['nuveiPluginVersion']       = NUVEI_PLUGIN_V;
+        $this->data['NUVEI_SETTINGS_PREFIX']    = NUVEI_SETTINGS_PREFIX;
         
         // add the settings to the $this->data
         $this->data = array_merge($this->data, $this->plugin_settings );

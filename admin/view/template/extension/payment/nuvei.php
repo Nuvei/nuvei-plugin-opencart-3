@@ -454,7 +454,7 @@
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_dmn_url'); ?></label>
                                     <div class="col-lg-10">
-                                        <span class="help-block"><?= $data['nuvei_dmn_url']; ?></span>
+                                        <div class="form-control"><?= $data['nuvei_dmn_url']; ?></div>
                                     </div>
                                 </div>
                                 
@@ -470,6 +470,18 @@
                                         
                                         <div class="col-lg-10">
                                             <span class="help-block"><?= $this->language->get('text_change_order_status'); ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Plugin version -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_plugin_version'); ?></label>
+                                    <div class="col-sm-10">
+                                        <div class="form-control"><?= $data['nuveiPluginVersion']; ?></div>
+                                        
+                                        <div class="col-lg-10">
+                                            <span class="help-block"><?= $this->language->get('text_plugin_version'); ?></span>
                                         </div>
                                     </div>
                                 </div>
