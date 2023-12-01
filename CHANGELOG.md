@@ -8,6 +8,7 @@
     * Changes into the logic who check for plugin updates.
     * Check if Order total and currency are correct when DMN come.
     * Added plugin version into plugin settings Help Tools.
+    * Disable DCC when Order total is Zero.
 ```
 
 # 1.7

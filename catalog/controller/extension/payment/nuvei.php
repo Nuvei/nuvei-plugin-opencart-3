@@ -75,6 +75,12 @@ class ControllerExtensionPaymentNuvei extends Controller
             $save_pm = 'always';
         }
         
+        $useDCC = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_dcc'];
+        
+        if (0 == $order_data['amount']) {
+            $useDCC = 'false';
+        }
+        
         // set the template data
         $data = $this->load->language(NUVEI_CONTROLLER_PATH);
         
@@ -91,7 +97,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'country'                => $order_data['billingAddress']['country'],
             'currency'               => $order_data['currency'],
             'amount'                 => $order_data['amount'],
-            'useDCC'                 => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'use_dcc'],
+            'useDCC'                 => $useDCC,
             'savePM'                 => $save_pm,
             'showUserPaymentOptions' => $use_upos,
             'pmWhitelist'            => null,
