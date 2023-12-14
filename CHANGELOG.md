@@ -9,7 +9,8 @@
     * Check if Order total and currency are correct when DMN come.
     * Added plugin version into plugin settings Help Tools.
     * Disable DCC when Order total is Zero.
-    * * Added the amount and the currency into Order's notes.
+    * Added the amount and the currency into Order's notes.
+    * Save DMN Note for Pending DMNs.
 ```
 
 # 1.7

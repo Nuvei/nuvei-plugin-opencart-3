@@ -221,8 +221,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         NUVEI_CLASS::create_log($this->plugin_settings, @$_REQUEST, 'DMN request');
         
-        ### Manual stop DMN is possible only in test mode
-//        die('manually stoped');
+        ### Manual stop DMN for tests
+        //die('manually stoped');
         
         // exit
         if ('CARD_TOKENIZATION' == NUVEI_CLASS::get_param('type')) {
@@ -232,9 +232,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         $req_status = $this->get_request_status();
         
         // exit
-        if ('pending' == strtolower($req_status)) {
-            $this->return_message('Pending DMN, wait for the next one.');
-        }
+//        if ('pending' == strtolower($req_status)) {
+//            $this->return_message('Pending DMN, wait for the next one.');
+//        }
         
         if(!$this->validate_dmn()) {
             $this->return_message('DMN report: You receive DMN from not trusted source. The process ends here.');
@@ -247,6 +247,13 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->process_subs_payment();
         
         $this->get_order_info_by_dmn();
+        
+        // exit
+        if (!empty($this->order_info['payment_custom_field'])
+            && 'pending' == strtolower($req_status)
+        ) {
+            $this->return_message('This is Pending DMN, but Order is already processed.');
+        }
         
         $order_id = $this->order_info['order_id'];
         
@@ -650,6 +657,11 @@ class ControllerExtensionPaymentNuvei extends Controller
                 $status_id = $this->config->get(NUVEI_SETTINGS_PREFIX . 'failed_status_id');
                 break;
 
+            case 'PENDING':
+                $message    = $this->language->get('The Transaction is Pending.') . $comment_details;
+                $status_id  = $this->config->get(NUVEI_SETTINGS_PREFIX . 'pending_status_id');
+                break;
+                
             default:
                 NUVEI_CLASS::create_log($this->plugin_settings, $status, 'Unexisting status:');
         }
