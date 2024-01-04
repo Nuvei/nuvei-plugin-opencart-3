@@ -2,6 +2,11 @@
 
 ---
 
+# 1.9
+```
+    * Fix for the "SDK translations" setting example.
+```
+
 # 1.8
 ```
     * Removed the updateOrder reques on SDK pre-payment event.

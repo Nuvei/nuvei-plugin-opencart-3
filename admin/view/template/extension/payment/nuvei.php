@@ -265,20 +265,6 @@
                                     </div>
                                 </div>-->
 
-                                <!-- SDK version -->
-<!--                                <div class="form-group">
-                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_sdk_version'); ?></label>
-                                    <div class="col-lg-10">
-                                        <select name="<?= NUVEI_SETTINGS_PREFIX; ?>sdk_version" class="form-control">
-                                            <option value="prod" <?php if (@$data[NUVEI_SETTINGS_PREFIX . 'sdk_version'] == "prod"): ?>selected="selected"<?php endif; ?>><?= $this->language->get('entry_prod'); ?></option>
-                                            
-                                            <option value="dev" <?php if (@$data[NUVEI_SETTINGS_PREFIX . 'sdk_version'] == "dev"): ?>selected="selected"<?php endif; ?>><?= $this->language->get('entry_dev'); ?></option>
-                                        </select>
-
-                                        <span class="help-block"><?= $this->language->get('entry_sdk_version_help'); ?></span>
-                                    </div>
-                                </div>-->
-
                                 <!-- Checkout SDK Theme -->
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_sdk_theme'); ?></label>
@@ -422,14 +408,8 @@
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_sdk_transl'); ?></label>
                                     <div class="col-lg-10">
                                         <textarea name="<?= NUVEI_SETTINGS_PREFIX; ?>sdk_transl" rows="5" class="form-control textarea-autosize" placeholder='{
-    "de": { 
-        "doNotHonor": "you dont have enough money",
-        "DECLINE": "declined"
-    },
-    "es": { 
-        "doNotHonor": "you dont have enough money",
-        "DECLINE": "declined"
-    }
+"doNotHonor": "you dont have enough money",
+"DECLINE": "declined"
 }'></textarea>
 
                                         <span class="help-block"><?= $this->language->get('text_sdk_transl_help'); ?></span>
