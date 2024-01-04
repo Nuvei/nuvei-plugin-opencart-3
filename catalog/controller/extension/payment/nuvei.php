@@ -81,6 +81,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             $useDCC = 'false';
         }
         
+        $locale = substr($this->get_locale(), 0, 2);
+        
         // set the template data
         $data = $this->load->language(NUVEI_CONTROLLER_PATH);
         
@@ -106,12 +108,17 @@ class ControllerExtensionPaymentNuvei extends Controller
             'fullName'               => trim($order_data['billingAddress']['firstName'] 
                 . ' ' . $order_data['billingAddress']['lastName']),
             'payButton'              => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'pay_btn_text'],
-            'locale'                 => substr($this->get_locale(), 0, 2),
+            'locale'                 => $locale,
             'autoOpenPM'             => (bool) $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_expand_pms'],
             'logLevel'               => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_log_level'],
             'i18n'                   => json_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_transl'], true),
             'theme'                  => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_theme'],
             'apmWindowType'          => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type'],
+            'apmConfig'              => [
+                'googlePay' => [
+                    'locale' => $locale
+                ]
+            ],
         ];
         
         $data['action'] = $this->url->link(NUVEI_CONTROLLER_PATH . '/process_payment')
