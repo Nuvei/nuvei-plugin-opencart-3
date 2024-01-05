@@ -81,7 +81,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             $useDCC = 'false';
         }
         
-        $locale = substr($this->get_locale(), 0, 2);
+        $locale     = substr($this->get_locale(), 0, 2);
+        $sdk_transl = html_entity_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_transl']);
         
         // set the template data
         $data = $this->load->language(NUVEI_CONTROLLER_PATH);
@@ -111,7 +112,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'locale'                 => $locale,
             'autoOpenPM'             => (bool) $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_expand_pms'],
             'logLevel'               => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_log_level'],
-            'i18n'                   => json_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_transl'], true),
+            'i18n'                   => json_decode($sdk_transl, true),
             'theme'                  => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_theme'],
             'apmWindowType'          => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type'],
             'apmConfig'              => [
@@ -133,6 +134,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         // load common php template and then pass it to the real template
         // as single variable. The form is same for both versions
         $tpl_path = 'default/template/'  . NUVEI_CONTROLLER_PATH;
+        
+        NUVEI_CLASS::create_log($this->plugin_settings, $data['nuvei_sdk_params'], 'SDK params');
         
         ob_start();
         require DIR_TEMPLATE . $tpl_path . '.php';
