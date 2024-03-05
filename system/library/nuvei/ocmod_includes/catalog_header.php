@@ -6,13 +6,16 @@ try {
     $this->load->model('setting/setting');
     
     // add Nuvei Checkout SDK
-//    if('prod' == $this->config->get(NUVEI_SETTINGS_PREFIX . 'sdk_version')) {
+    if (!empty($_SERVER['SERVER_NAME']) 
+        && 'opencartautomation.gw-4u.com' == $_SERVER['SERVER_NAME']
+        && defined('NUVEI_SDK_URL_TAG')
+    ) {
+        $this->document->addScript(NUVEI_SDK_URL_TAG);
+    }
+    else {
         $this->document->addScript(NUVEI_SDK_URL_PROD);
-//    }
-//    else {
-//        $this->document->addScript(NUVEI_SDK_URL_INT);
-//    }
-    
+    }
+     
     // add Nuvei common modify script
     $this->document->addScript('catalog/view/javascript/nuvei_common_js_mod.js');
 }

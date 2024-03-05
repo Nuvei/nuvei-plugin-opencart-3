@@ -15,6 +15,7 @@ const NUVEI_PLUGIN_TITLE        = 'Nuvei';
 const NUVEI_LIVE_URL_BASE       = 'https://secure.safecharge.com/ppp/api/v1/';
 const NUVEI_TEST_URL_BASE       = 'https://ppp-test.nuvei.com/ppp/api/v1/';
 const NUVEI_SDK_URL_PROD        = 'https://cdn.safecharge.com/safecharge_resources/v1/checkout/checkout.js';
+const NUVEI_SDK_URL_TAG         = 'https://devmobile.sccdev-qa.com/checkoutNext/checkout.js';
 const NUVEI_SDK_AUTOCLOSE_URL   = 'https://cdn.safecharge.com/safecharge_resources/v1/websdk/autoclose.html';
 
 const NUVEI_AUTH_CODE           = '_authCode';
