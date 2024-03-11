@@ -2,6 +2,11 @@
 
 ---
 
+# 1.9-p1
+```
+    * Added Tag SDK URL for test cases.
+```
+
 # 1.9
 ```
     * Fix for the "SDK translations" setting example.
