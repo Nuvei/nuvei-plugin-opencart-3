@@ -99,6 +99,7 @@ $_['entry_dmn_url']             = 'Notification (DMN) URL:';
 $_['entry_change_order_status'] = 'Auto change the Order status:';
 $_['entry_plugin_version']      = 'Plugin Version:';
 $_['entry_rebilling_plan_id']   = 'Rebilling Plan ID:';
+$_['entry_mask_user_details']   = 'Mask users details in the log:';
 
 $_['entry_apm_window_type']         = 'APM window type:';
 $_['entry_auto_close_apm_popup']    = 'Auto close APM popup:';

@@ -388,6 +388,18 @@
                                         </div>
                                     </div>
                                 <?php endif; ?>
+                                
+                                <!-- Mask or unmask user details in the log -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_mask_user_details'); ?></label>
+                                    <div class="col-lg-10">
+                                        <select name="<?= NUVEI_SETTINGS_PREFIX; ?>mask_user_details" class="form-control">
+                                            <option value="1" <?php if(!isset($data[NUVEI_SETTINGS_PREFIX . 'mask_user_details']) || $data[NUVEI_SETTINGS_PREFIX . 'mask_user_details'] == 1): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_yes'); ?></option>
+
+                                            <option value="0" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'mask_user_details'] == 0): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_no'); ?></option>
+                                        </select>
+                                    </div>
+                                </div>
 
                                 <!-- Checkout SDK log level -->
                                 <div class="form-group">

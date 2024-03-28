@@ -8,7 +8,7 @@
  * @author Nuvei
  */
 
-const NUVEI_PLUGIN_V            = '1.9';
+const NUVEI_PLUGIN_V            = '1.10';
 const NUVEI_PLUGIN_CODE         = 'nuvei';
 const NUVEI_PLUGIN_TITLE        = 'Nuvei';
 
@@ -31,6 +31,20 @@ const NUVEI_ADMIN_EXT_URL       = 'marketplace/extension';
 
 class NUVEI_CLASS
 {
+    private static $fieldsToMask = [
+        'ips'       => ['ipAddress'],
+        'names'     => ['firstName', 'lastName', 'first_name', 'last_name', 'shippingFirstName', 'shippingLastName'],
+        'emails'    => [
+            'userTokenId',
+            'email',
+            'shippingMail', // from the DMN
+            'userid', // from the DMN
+            'user_token_id', // from the DMN
+        ],
+        'address'   => ['address', 'phone', 'zip'],
+        'others'    => ['userAccountDetails', 'userPaymentOption', 'paymentOption'],
+    ];
+    
     private static $trace_id;
     
 	// array details to validate request parameters
@@ -420,8 +434,13 @@ class NUVEI_CLASS
         }
         // /can we save DEBUG logs
         
-        $beauty_log = (1 == $test_mode) ? true : false;
-        $tab        = '    '; // 4 spaces
+        $mask_details   = true; // true if the setting is not set
+        $beauty_log     = (1 == $test_mode) ? true : false;
+        $tab            = '    '; // 4 spaces
+        
+        if(isset($settings[NUVEI_SETTINGS_PREFIX . 'mask_user_details'])) {
+            $mask_details = (bool) $settings[NUVEI_SETTINGS_PREFIX . 'mask_user_details'];
+        }
         
         # prepare log parts
         $utimestamp     = microtime(true);
@@ -463,6 +482,13 @@ class NUVEI_CLASS
         }
         
         if(is_array($data)) {
+            if ($mask_details) {
+                // clean possible objects inside array
+                $data = json_decode(json_encode($data), true);
+                
+                array_walk_recursive($data, 'self::maskData', self::$fieldsToMask);
+            }
+            
             // paymentMethods can be very big array
             if(!empty($data['paymentMethods'])) {
                 $exception = json_encode($data);
@@ -472,6 +498,13 @@ class NUVEI_CLASS
             }
         }
         elseif(is_object($data)) {
+            if ($mask_details) {
+                // clean possible objects inside array
+                $data = json_decode(json_encode($data), true);
+                
+                array_walk_recursive($data, 'self::maskData', self::$fieldsToMask);
+            }
+            
             $data_tmp   = print_r($data, true);
             $exception  = $beauty_log ? json_encode($data_tmp, JSON_PRETTY_PRINT) : json_encode($data_tmp);
         }
@@ -659,4 +692,29 @@ class NUVEI_CLASS
         
         return $params;
     }
+    
+    /**
+     * A callback function for arraw_walk_recursive.
+     * 
+     * @param mixed $value
+     * @param mixed $key
+     * @param array $fields
+     */
+    private static function maskData(&$value, $key, $fields)
+    {
+        if (!empty($value)) {
+            if (in_array($key, $fields['ips'])) {
+                $value = rtrim(long2ip(ip2long($value) & (~255)), "0")."x";
+            } elseif (in_array($key, $fields['names'])) {
+                $value = substr($value, 0, 1) . '****';
+            } elseif (in_array($key, $fields['emails'])) {
+                $value = '****' . substr($value, 4);
+            } elseif (in_array($key, $fields['address'])
+                || in_array($key, $fields['others'])
+            ) {
+                $value = '****';
+            }
+        }
+    }
+    
 }
