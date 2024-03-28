@@ -4,7 +4,7 @@
 
 # 1.10
 ```
-    Add option to mask/unmask user details in the log.
+    * Add option to mask/unmask user details in the log.
 ```
 
 # 1.9-p1
