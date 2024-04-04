@@ -498,7 +498,7 @@ class NUVEI_CLASS
             }
         }
         elseif(is_object($data)) {
-            if ($mask_details) {
+            if ($mask_details && !empty($data)) {
                 // clean possible objects inside array
                 $data = json_decode(json_encode($data), true);
                 
