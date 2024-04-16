@@ -173,7 +173,10 @@
         
         nuveiCheckoutSdkParams.prePayment   = nuveiPrePayment;
         nuveiCheckoutSdkParams.onResult		= nuveiAfterSdkResponse;
-
+        
+        if (typeof checkout.destroy == 'function') {
+            checkout.destroy();
+        }
         checkout(nuveiCheckoutSdkParams);
     }
     

@@ -5,6 +5,7 @@
 # 1.10
 ```
     * Add option to mask/unmask user details in the log.
+    * Try to destroy checkout object before creating it.
 ```
 
 # 1.9-p1
