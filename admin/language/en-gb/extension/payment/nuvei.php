@@ -57,13 +57,13 @@ $_['entry_merchantId']      = 'Merchant ID:';
 $_['entry_merchantSiteId']  = 'Merchant Site ID:';
 $_['entry_ppp_Payment_URL'] = 'Payment URL:';
 $_['entry_secret']		    = 'Merchant Secret Key:';
-$_['entry_hash']            = 'Merchant Hash type:';
+$_['entry_hash']            = 'Merchant Hash Type:';
 $_['entry_payment_action']  = 'Payment Action:';
 
 $_['entry_option_cashier']  = 'Hosted Payment Page';
 $_['entry_option_rest']     = 'Nuvei API';
 
-$_['entry_test_mode']		    = 'Sandbox mode:';
+$_['entry_test_mode']		    = 'Sandbox Mode:';
 $_['entry_use_upos']		    = 'Enable UPOs:';
 $_['entry_force_http']		    = 'Use http Notify URL:';
 $_['entry_create_logs']		    = 'Save Logs:';
@@ -81,8 +81,8 @@ $_['entry_preselect_nuvei']     = 'Preselect Nuvei on checkout:';
 //$_['entry_sdk_version']         = 'SDK version:';
 $_['entry_prod']                = 'Prod';
 $_['entry_dev']                 = 'Dev';
-$_['entry_sdk_theme']           = 'SimplyConnect theme:';
-$_['entry_dcc']                 = 'Use currency conversion:';
+$_['entry_sdk_theme']           = 'Simply Connect Theme:';
+$_['entry_dcc']                 = 'Use Currency Conversion:';
 $_['entry_enable']              = 'Enable';
 $_['entry_dcc_force']           = 'Enabled and expanded';
 $_['entry_dcc_disable']         = 'Disable';
@@ -99,7 +99,7 @@ $_['entry_dmn_url']             = 'Notification (DMN) URL:';
 $_['entry_change_order_status'] = 'Auto change the Order status:';
 $_['entry_plugin_version']      = 'Plugin Version:';
 $_['entry_rebilling_plan_id']   = 'Rebilling Plan ID:';
-$_['entry_mask_user_details']   = 'Mask users details in the log:';
+$_['entry_mask_user_details']   = 'Mask Users Details in the Log:';
 
 $_['entry_apm_window_type']         = 'APM window type:';
 $_['entry_auto_close_apm_popup']    = 'Auto close APM popup:';
