@@ -26,7 +26,7 @@ const NUVEI_TRANS_TYPE          = '_transactionType';
 const NUVEI_TOKEN_NAME          = 'user_token';
 const NUVEI_CONTROLLER_PATH     = 'extension/payment/nuvei';
 const NUVEI_SETTINGS_PREFIX     = 'payment_nuvei_';
-const NUVEI_SOURCE_APP          = 'openCart 3.0 Plugin';
+const NUVEI_SOURCE_APP          = 'OPENCART_3_0_PLUGIN';
 const NUVEI_ADMIN_EXT_URL       = 'marketplace/extension';
 
 class NUVEI_CLASS

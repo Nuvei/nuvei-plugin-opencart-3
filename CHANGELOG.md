@@ -6,6 +6,7 @@
 ```
     * Add option to mask/unmask user details in the log.
     * Try to destroy checkout object before creating it.
+    * Fix for the sourceApplication parameter.
 ```
 
 # 1.9-p1
