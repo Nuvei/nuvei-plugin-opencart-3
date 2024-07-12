@@ -120,6 +120,7 @@ class ControllerExtensionPaymentNuvei extends Controller
                     'locale' => $locale
                 ]
             ],
+            'sourceApplication'     => NUVEI_SOURCE_APP,
         ];
         
         $data['action'] = $this->url->link(NUVEI_CONTROLLER_PATH . '/process_payment')

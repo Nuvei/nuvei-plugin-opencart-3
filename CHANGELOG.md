@@ -2,6 +2,11 @@
 
 ---
 
+# 1.11
+```
+    * Pass sourceApplication to Simply Connect.
+```
+
 # 1.10
 ```
     * Add option to mask/unmask user details in the log.
