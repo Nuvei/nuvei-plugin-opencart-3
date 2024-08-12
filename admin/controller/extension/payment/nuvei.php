@@ -334,10 +334,12 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         // /manual refund
         
-//        $clientUniqueId = uniqid();
-		$time = date('YmdHis');
-		
-        $ref_parameters = array(
+		$time               = date('YmdHis');
+        $order_status_curr  = $this->data['order_status_id'];
+        $order_status       = 1; // pending
+        $error_resp         = array();
+        
+        $ref_parameters     = array(
 			'clientUniqueId'        => $order_id . '_' . uniqid(),
 			'amount'                => $this->request->post['amount'],
 			'currency'              => $this->data['currency_code'],
@@ -348,6 +350,19 @@ class ControllerExtensionPaymentNuvei extends Controller
 			'urlDetails'            => array('notificationUrl' => $this->notify_url),
 			'url'                   => $this->notify_url,
 		);
+        
+        // set the status to Pending
+        $this->db->query(
+            "UPDATE " . DB_PREFIX ."order "
+            . "SET order_status_id = {$order_status} "
+            . "WHERE order_id = {$order_id};"
+        );
+            
+        NUVEI_CLASS::create_log(
+            $this->plugin_settings,
+            $order_status,
+            'after set the refund status in the admin'
+        );
 		
 		$resp = NUVEI_CLASS::call_rest_api(
             'refundTransaction',
@@ -357,62 +372,88 @@ class ControllerExtensionPaymentNuvei extends Controller
         );
 			
         if(!$resp) {
-            exit(json_encode(array(
+            $error_resp = array(
                 'status'    => 0, 
-                'msg'       => 'Empty response.')
-            ));
+                'msg'       => 'Empty response.'
+            );
+            
+//            exit(json_encode(array(
+//                'status'    => 0, 
+//                'msg'       => 'Empty response.')
+//            ));
         }
         
         // in case we have message but without status
         if(!isset($resp['status']) && isset($resp['msg'])) {
-            // save response message in the History
-//            $msg = 'Request Refund #' . $clientUniqueId . ' problem: ' . $resp['msg'];
-            
-//            $this->db->query(
-//                "INSERT INTO `" . DB_PREFIX ."order_history` (`order_id`, `order_status_id`, `notify`, `comment`, `date_added`) "
-//                . "VALUES (" . $order_id . ", " . $this->data['order_status_id']
-//                . ", 0, '" . $msg . "', '" . date('Y-m-d H:i:s', time()) . "');"
-//            );
-            
-            exit(json_encode(array(
+            $error_resp = array(
                 'status'    => 0,
                 'msg'       => $resp['msg']
-            )));
+            );
+            
+//            exit(json_encode(array(
+//                'status'    => 0,
+//                'msg'       => $resp['msg']
+//            )));
         }
         
         if($resp === false) {
-            exit(json_encode(array(
+            $error_resp = array(
                 'status'    => 0,
                 'msg'       => $this->language->load('The request faild.')
-            )));
+            );
+            
+//            exit(json_encode(array(
+//                'status'    => 0,
+//                'msg'       => $this->language->load('The request faild.')
+//            )));
         }
         
         if(!is_array($resp)) {
-            exit(json_encode(array(
+            $error_resp = array(
                 'status'    => 0,
                 'msg'       => $this->language->load('Invalid request response.')
-            )));
+            );
+            
+//            exit(json_encode(array(
+//                'status'    => 0,
+//                'msg'       => $this->language->load('Invalid request response.')
+//            )));
         }
         
         // the status of the request is ERROR
         if(!empty($resp['status']) && $resp['status'] == 'ERROR') {
-            exit(json_encode(array(
+            $error_resp = array(
                 'status'    => 0, 
                 'msg'       => $resp['reason']
-            )));
+            );
+            
+//            exit(json_encode(array(
+//                'status'    => 0, 
+//                'msg'       => $resp['reason']
+//            )));
         }
         
-        $order_status = 1; // pending
+        if (!empty($error_resp)) {
+            // revert the original Order status
+            $this->db->query(
+                "UPDATE " . DB_PREFIX ."order "
+                . "SET order_status_id = {$order_status_curr} "
+                . "WHERE order_id = {$order_id};"
+            );
+                
+            exit(json_encode($error_resp));
+        }
         
+        // if this is the e last possible refund set order to Refunded
         if($remaining_ref_amound == $request_amount) {
             $order_status = 11; // refunded
+            
+            $this->db->query(
+                "UPDATE " . DB_PREFIX ."order "
+                . "SET order_status_id = {$order_status} "
+                . "WHERE order_id = {$order_id};"
+            );
         }
-        
-        $this->db->query(
-            "UPDATE " . DB_PREFIX ."order "
-            . "SET order_status_id = {$order_status} "
-            . "WHERE order_id = {$order_id};"
-        );
         
         exit(json_encode(array(
             'status' => 1
@@ -943,50 +984,5 @@ class ControllerExtensionPaymentNuvei extends Controller
         $new_price = round((float) $price * $this->data['currency_value'], 2);
         return number_format($new_price, 2, '.', '');
     }
-    
-    /**
-     * Check for newer version of the plugin.
-     */
-//    private function check_for_update()
-//    {
-//        $matches = array();
-//        $ch      = curl_init();
-//
-//        curl_setopt(
-//            $ch,
-//            CURLOPT_URL,
-//            'https://raw.githubusercontent.com/SafeChargeInternational/nuvei_checkout_opencart3/main/CHANGELOG.md'
-//        );
-//
-//        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-//        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-//
-//        $file_text = curl_exec($ch);
-//        curl_close($ch);
-//
-//        preg_match('/(#\s[0-9]\.[0-9])(\n)?/', $file_text, $matches);
-//
-//        if (!isset($matches[1])) {
-//            exit(json_encode([
-//                'status'    => 0,
-//                'msg'       => $this->language->get('text_no_github_plugin_version')
-//            ]));
-//        }
-//        
-//        $git_v  = (int) str_replace('.', '', trim($matches[1]));
-//        $curr_v = (int) str_replace('.', '', NUVEI_PLUGIN_V);
-//        
-//        if($git_v <= $curr_v) {
-//            exit(json_encode([
-//                'status'    => 0,
-//                'msg'       => $this->language->get('text_github_plugin_same_version')
-//            ]));
-//        }
-//        
-//        exit(json_encode([
-//            'status'    => 1,
-//            'msg'       => $this->language->get('text_github_new_plugin_version'),
-//        ]));
-//    }
     
 }
