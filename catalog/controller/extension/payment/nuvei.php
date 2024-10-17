@@ -43,11 +43,11 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         
         // before call Open Order check for not allowed combination of prdocusts
-        if (count($this->cart->getRecurringProducts()) > 0
-            && count($products) > 1
-        ) {
-            exit('<div class="alert alert-danger">'. $this->language->get('error_nuvei_products') .'</div>');
-        }
+//        if (count($this->cart->getRecurringProducts()) > 0
+//            && count($products) > 1
+//        ) {
+//            exit('<div class="alert alert-danger">'. $this->language->get('error_nuvei_products') .'</div>');
+//        }
         
         // Open Order
         $order_data = $this->open_order($products);

@@ -2,6 +2,11 @@
 
 ---
 
+# 1.12
+```
+    * Fix the plugin behavior when product with non-Nuvei rebilling plan is added to the Cart.
+```
+
 # 1.11
 ```
     * Pass sourceApplication to Simply Connect.
