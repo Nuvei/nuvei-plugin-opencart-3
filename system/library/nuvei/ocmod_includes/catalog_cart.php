@@ -12,21 +12,12 @@ if (empty($json['error'])) {
         && isset($recurrings[$nuveiSelectedRecId]['name']) 
         && strpos(strtolower($recurrings[$nuveiSelectedRecId]['name']), NUVEI_PLUGIN_CODE) !== false
     ) {
-//        foreach($recurrings as $reb_data) {
-//            // Check for nuvei into recurring name.
-//            // Stop adding if there are any products in the cart already or
-//            // if the user is not logged.
-//            if (strpos(strtolower($reb_data['name']), NUVEI_PLUGIN_CODE) !== false) {
-                if(count($this->cart->getProducts())) {
-                    $json['error']['recurring'] = $this->language->get('nuvei_rec_error');
-//                    break;
-                }
-                if(empty($this->session->data['customer_id'])) {
-                    $json['error']['recurring'] = $this->language->get('nuvei_rec_user_error');
-//                    break;
-                }
-//            }
-//        }
+        if(count($this->cart->getProducts())) {
+            $json['error']['recurring'] = $this->language->get('nuvei_rec_error');
+        }
+        if(empty($this->session->data['customer_id'])) {
+            $json['error']['recurring'] = $this->language->get('nuvei_rec_user_error');
+        }
     }
     // check for rebilling products into the Cart
     else {

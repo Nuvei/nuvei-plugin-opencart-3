@@ -7,7 +7,7 @@
     <link>https://www.nuvei.com/</link>
     
     <!-- append Nuvei Checkout SDK script to the header -->
-    <file path="catalog/controller/common/header.php">
+<!--    <file path="catalog/controller/common/header.php">
         <operation>
             <search><![CDATA[
                 $data['scripts'] = $this->document->getScripts('header');
@@ -20,11 +20,11 @@
                 # /Nuvei Modification
             ]]></add>
         </operation>
-    </file>
+    </file>-->
     
     <!-- prevent combining of product with rebilling plan with other products part -->
-    <file path="catalog/controller/checkout/cart.php">
-        <operation>
+    <!--<file path="catalog/controller/checkout/cart.php">-->
+<!--        <operation>
             <search><![CDATA[
                 if (!$json) {
             ]]></search>
@@ -35,10 +35,10 @@
 					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'catalog_cart.php';
                 # /Nuvei Modification
             ]]></add>
-        </operation>
+        </operation>-->
         
         <!-- if we set Nuvei Recurring Erro with above mod, remove the redirect -->
-        <operation>
+<!--        <operation>
             <search><![CDATA[
                 $json['redirect'] = str_replace('&amp;', '&', $this->url->link('product/product', 'product_id=' . $this->request->post['product_id']));
             ]]></search>
@@ -49,8 +49,8 @@
 					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'catalog_cart_2.php';
                 # /Nuvei Modification
             ]]></add>
-        </operation>
-    </file>
+        </operation>-->
+    <!--</file>-->
     
     <!-- remove all payment providers except Nuvei if there is product with Nuvei Rebilling -->
     <file path="catalog/controller/checkout/payment_method.php">

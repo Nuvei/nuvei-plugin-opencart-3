@@ -23,6 +23,23 @@ class ControllerExtensionPaymentNuvei extends Controller
 	
     public function install()
     {
+        // Load the event model to add a new event
+        $this->load->model('setting/event');
+        
+        // for the Catalog custom JSs
+        $this->model_setting_event->addEvent(
+            'nuvei_catalog_add_scripts',  // Unique event code
+            'catalog/controller/common/footer/before',
+            'extension/payment/nuvei/addJsScriptsToCatalog' // The callback method
+        );
+        
+        // event whent someone try to add product to the Cart
+        $this->model_setting_event->addEvent(
+            'nuvei_catalog_add_to_cart',  // Unique event code
+            'catalog/controller/checkout/cart/add/before',
+            'extension/payment/nuvei/addProductToCart' // The callback method
+        );
+        
         // remove the plugin upgrade cookie if exists
         if (!empty($_COOKIE['nuvei_plugin_msg'])) {
             unset($_COOKIE['nuvei_plugin_msg']);
@@ -33,6 +50,13 @@ class ControllerExtensionPaymentNuvei extends Controller
     
     public function uninstall()
     {
+        // Load the event model to remove the event
+        $this->load->model('setting/event');
+
+        // Remove events based on its unique code
+        $this->model_setting_event->deleteEventByCode('nuvei_catalog_add_scripts');
+        $this->model_setting_event->deleteEventByCode('nuvei_catalog_add_to_cart');
+        
         // remove the plugin upgrade cookie if exists
         if (!empty($_COOKIE['nuvei_plugin_msg'])) {
             unset($_COOKIE['nuvei_plugin_msg']);

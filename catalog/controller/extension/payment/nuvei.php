@@ -370,6 +370,94 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $this->response->redirect($error_url);
     }
+    
+    /**
+     * Event callback method.
+     * 
+     * @param string $route
+     * @param array $data
+     */
+    public function addJsScriptsToCatalog(&$route, &$data)
+    {
+        if (!empty($_SERVER['SERVER_NAME']) 
+            && 'opencartautomation.gw-4u.com' == $_SERVER['SERVER_NAME']
+            && defined('NUVEI_SDK_URL_TAG')
+        ) {
+            $this->document->addScript(NUVEI_SDK_URL_TAG, 'footer');
+        }
+        else {
+            $this->document->addScript(NUVEI_SDK_URL_PROD, 'footer');
+        }
+
+        // add Nuvei common modify script
+        $this->document->addScript('catalog/view/javascript/nuvei_common_js_mod.js', 'footer');
+    }
+    
+    /**
+     * Event callback method.
+     * 
+     * @param string $route
+     * @param array $data
+     */
+    public function addProductToCart(&$route, &$args)
+    {
+        $product_id = 0;
+        
+        if (isset($this->request->post['product_id'])) {
+			$product_id = (int) $this->request->post['product_id'];
+		}
+        
+        $this->load->model('catalog/product');
+
+		$product_info = $this->model_catalog_product->getProduct($product_id);
+        
+        if ($product_info) {
+            $recurrings     = $this->model_catalog_product->getProfiles($product_info['product_id']);
+            $recurring_id   = 0;
+            $json           = array();
+            
+            if (isset($this->request->post['recurring_id'])) {
+                $recurring_id = (int) current($this->request->post['recurring_id']);
+            }
+            
+            // for the incoming product
+            if ($recurrings 
+                && isset($recurrings[$recurring_id]['name']) 
+                && strpos(strtolower($recurrings[$recurring_id]['name']), NUVEI_PLUGIN_CODE) !== false
+            ) {
+                if(count($this->cart->getProducts())) {
+                    $json['error']['recurring'] = $this->language->get('nuvei_rec_error');
+                }
+                if(empty($this->session->data['customer_id'])) {
+                    $json['error']['recurring'] = $this->language->get('nuvei_rec_user_error');
+                }
+            }
+            // check for rebilling products into the Cart
+            else {
+                $rebilling_data = $this->cart->getRecurringProducts();
+
+                if(count($rebilling_data) > 0) {
+                    foreach($rebilling_data as $reb_data) {
+                        // check for nuvei into recurring name
+                        if (isset($reb_data['recurring']['name'])
+                            && strpos(strtolower($reb_data['recurring']['name']), NUVEI_PLUGIN_CODE) !== false
+                        ) {
+                            $json['error_nuvei'] = $this->language->get('nuvei_rec_error');
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (isset($json['error_nuvei']) || isset($json['error'])) {
+                // Send the JSON response and stop further execution
+                $this->response->addHeader('Content-Type: application/json');
+                $this->response->setOutput(json_encode($json));
+
+                return false;
+            }
+        }
+    }
 	
     /**
      * Function validate_dmn
