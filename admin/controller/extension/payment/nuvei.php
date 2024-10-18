@@ -40,6 +40,13 @@ class ControllerExtensionPaymentNuvei extends Controller
             'extension/payment/nuvei/addProductToCart' // The callback method
         );
         
+        // try to filter payment providers
+        $this->model_setting_event->addEvent(
+            'nuvei_catalog_filter_payment_methods',  // Unique event code
+            'catalog/model/setting/extension/getExtensions/after',
+            'extension/payment/nuvei/filterPaymentProviders' // The callback method
+        );
+        
         // remove the plugin upgrade cookie if exists
         if (!empty($_COOKIE['nuvei_plugin_msg'])) {
             unset($_COOKIE['nuvei_plugin_msg']);
@@ -56,6 +63,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         // Remove events based on its unique code
         $this->model_setting_event->deleteEventByCode('nuvei_catalog_add_scripts');
         $this->model_setting_event->deleteEventByCode('nuvei_catalog_add_to_cart');
+        $this->model_setting_event->deleteEventByCode('nuvei_catalog_filter_payment_methods');
         
         // remove the plugin upgrade cookie if exists
         if (!empty($_COOKIE['nuvei_plugin_msg'])) {

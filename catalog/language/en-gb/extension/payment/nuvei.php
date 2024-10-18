@@ -17,7 +17,7 @@ $_['nuvei_btn_loading']         = 'Loading...';
 $_['nuvei_error_logged_user']   = 'Error! You are not registred user.';
 $_['nuvei_error_default']       = 'Unexpected error, please try again later.';
 $_['nuvei_payment_faild']       = 'Payment Failed. Please try again.';
-$_['nuvei_rec_error']           = 'You can not checkout payment plan products together with non-payment plan ones.';
+$_['nuvei_rec_error']           = 'You can not checkout payment plan products together with other products.';
 $_['nuvei_rec_user_error']      = 'Please, login to add this product!';
 
 $_['The parameter Billing Address Email is not valid.']		= 'The parameter Billing Address Email is not valid.';

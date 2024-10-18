@@ -4,7 +4,7 @@
 
 # 2.0
 ```
-	* Replace modes with events.
+	* Replace the modes with events.
 ```
 
 # 1.12

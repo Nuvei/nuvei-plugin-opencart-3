@@ -416,8 +416,10 @@ class ControllerExtensionPaymentNuvei extends Controller
             $recurring_id   = 0;
             $json           = array();
             
+            $this->language->load(NUVEI_CONTROLLER_PATH);
+            
             if (isset($this->request->post['recurring_id'])) {
-                $recurring_id = (int) current($this->request->post['recurring_id']);
+                $recurring_id = (int) $this->request->post['recurring_id'];
             }
             
             // for the incoming product
@@ -455,6 +457,34 @@ class ControllerExtensionPaymentNuvei extends Controller
                 $this->response->setOutput(json_encode($json));
 
                 return false;
+            }
+        }
+    }
+    
+    /**
+     * Event callback method.
+     * 
+     * @param string $route
+     * @param array $data
+     */
+    public function filterPaymentProviders(&$route, &$args, &$output)
+    {
+        if (!empty($args) && current($args) == 'payment') {
+            $rebilling_data = $this->cart->getRecurringProducts();
+
+            if(count($rebilling_data) > 0) {
+                foreach($rebilling_data as $reb_data) {
+                    // check for nuvei into recurring name
+                    if (isset($reb_data['recurring']['name'])
+                        && strpos(strtolower($reb_data['recurring']['name']), NUVEI_PLUGIN_CODE) !== false
+                    ) {
+                        foreach($output as $key => $payment) {
+                            if ($payment['code'] != NUVEI_PLUGIN_CODE) {
+                                unset($output[$key]);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
