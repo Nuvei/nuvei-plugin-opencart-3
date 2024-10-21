@@ -465,7 +465,8 @@ class ControllerExtensionPaymentNuvei extends Controller
      * Event callback method.
      * 
      * @param string $route
-     * @param array $data
+     * @param array $args
+     * @param array $output
      */
     public function filterPaymentProviders(&$route, &$args, &$output)
     {

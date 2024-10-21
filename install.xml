@@ -69,7 +69,7 @@
     </file>-->
     
     <!-- append Nuvei JS file to check for new version -->
-    <file path="admin/controller/common/header.php">
+<!--    <file path="admin/controller/common/header.php">
         <operation>
             <search><![CDATA[
                 $data['scripts'] = $this->document->getScripts();
@@ -82,11 +82,11 @@
                 # /Nuvei Modification
             ]]></add>
         </operation>
-    </file>
+    </file>-->
 	
 	<!-- modify file again to preview net Total (after refunds) in the Orders list -->
     <file path="admin/controller/sale/order.php">
-        <operation>
+<!--        <operation>
             <search><![CDATA[
                 if (isset($this->error['warning'])) {
             ]]></search>
@@ -97,7 +97,7 @@
 					. 'ocmod_includes' . DIRECTORY_SEPARATOR . 'sale_order_2.php';
                 # /Nuvei Modification
             ]]></add>
-        </operation>
+        </operation>-->
         
         <!-- load in controller Nuvei translations -->
         <operation>
