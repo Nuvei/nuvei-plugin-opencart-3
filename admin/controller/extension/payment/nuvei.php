@@ -61,6 +61,13 @@ class ControllerExtensionPaymentNuvei extends Controller
             'extension/payment/nuvei/modifyOrdersTotals' // The callback method
         );
         
+        // add custom script in Order info page
+        $this->model_setting_event->addEvent(
+            'nuvei_admin_order_info_add_script',  // Unique event code
+            'admin/controller/sale/order/info/before',
+            'extension/payment/nuvei/addJsScriptsToAdminOrderInfo' // The callback method
+        );
+        
         // remove the plugin upgrade cookie if exists
         if (!empty($_COOKIE['nuvei_plugin_msg'])) {
             unset($_COOKIE['nuvei_plugin_msg']);
@@ -80,6 +87,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->model_setting_event->deleteEventByCode('nuvei_catalog_filter_payment_methods');
         $this->model_setting_event->deleteEventByCode('nuvei_admin_add_script');
         $this->model_setting_event->deleteEventByCode('nuvei_admin_modify_orders_totals');
+        $this->model_setting_event->deleteEventByCode('nuvei_admin_order_info_add_script');
         
         // remove the plugin upgrade cookie if exists
         if (!empty($_COOKIE['nuvei_plugin_msg'])) {
@@ -260,6 +268,17 @@ class ControllerExtensionPaymentNuvei extends Controller
      * Event callback method.
      * 
      * @param string $route
+     * @param array $data
+     */
+    public function addJsScriptsToAdminOrderInfo(&$route, &$data)
+    {
+        $this->document->addScript('view/javascript/nuvei_orders.js');
+    }
+    
+    /**
+     * Event callback method.
+     * 
+     * @param string $route
      * @param array $args
      * @param array $results The list with Orders
      * 
@@ -349,6 +368,11 @@ class ControllerExtensionPaymentNuvei extends Controller
             NUVEI_CLASS::create_log($this->plugin_settings, $e->getMessage(), 'Nuvei event exception.', 'WARN');
             return;
         }
+    }
+    
+    public function modifyOrderHiostoryRecords()
+    {
+        
     }
     
     /**
@@ -1033,8 +1057,8 @@ class ControllerExtensionPaymentNuvei extends Controller
     {
         $order_id               = (int) $this->request->post['orderId'];
         $this->data             = $this->model_sale_order->getOrder($order_id);
-        $nuvei_last_trans       = [];
-        $nuvei_refunds          = [];
+        $nuvei_last_trans       = array();
+        $nuvei_refunds          = array();
         $remainingTotalCurr     = '';
         $nuvei_remaining_total  = $this->get_price($this->data['total']);
         $nuveiAllowRefundBtn    = 0;
@@ -1042,6 +1066,19 @@ class ControllerExtensionPaymentNuvei extends Controller
         $nuveiAllowSettleBtn    = 0;
         $allowCancelSubsBtn     = 0;
         $isNuveiOrder           = NUVEI_PLUGIN_CODE == $this->data['payment_code'] ? 1 : 0;
+        $historyPage            = 1;
+        $histories              = array();
+        
+        if (isset($this->request->post['historyPage'])) {
+			$page = (int) $this->request->post['historyPage'];
+		}
+        
+        // replace short history date with full date
+		$historyResults = $this->model_sale_order->getOrderHistories($order_id, ($historyPage - 1) * 10, 10);
+        
+        foreach ($historyResults as $result) {
+			$histories[] = date($this->language->get('datetime_format'), strtotime($result['date_added']));
+		}
         
         if(1 == $isNuveiOrder
             && !empty($this->data['payment_custom_field']) 
@@ -1119,6 +1156,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'orderTotal'                    => round($nuvei_remaining_total, 2),
             'currSymbolRight'               => $this->currency->getSymbolRight($this->data['currency_code']),
             'currSymbolLeft'                => $this->currency->getSymbolLeft($this->data['currency_code']),
+            'histories'                     => $histories,
             
             'nuveiRefundAmountError'        => $this->language->get('nuvei_refund_amount_error'),
             'nuveiUnexpectedError'          => $this->language->get('nuvei_unexpected_error'),

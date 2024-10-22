@@ -219,28 +219,33 @@ function loadNuveiExtras() {
 
 $(function(){
     console.log('nuvei_orders loaded');
+	
+	var searchParams		= new URLSearchParams(window.location.search);
+	nuveiVars.nuveiOrderId	= searchParams.has('order_id') ? searchParams.get('order_id') : 0;
+	nuveiVars.ajaxUrl		+= searchParams.has(nuveiTokenName) ? searchParams.get(nuveiTokenName) : '';
     
     // get user_token
-    var nuveiGetParams = window.location.toString().split('&');
-    
-    for(var i in nuveiGetParams) {
-        // get user token
-        if(nuveiGetParams[i].search(nuveiTokenName) == 0) {
-            nuveiVars.ajaxUrl += nuveiGetParams[i].replace(nuveiTokenName + '=', '');
-        }
-        // get order id
-        if(nuveiGetParams[i].search('order_id') == 0) {
-            nuveiVars.nuveiOrderId = nuveiGetParams[i].replace('order_id=', '');
-        }
-    }
-    
+//    var nuveiGetParams = window.location.toString().split('&');
+//    
+//    for(var i in nuveiGetParams) {
+//        // get user token
+//        if(nuveiGetParams[i].search(nuveiTokenName) == 0) {
+//            nuveiVars.ajaxUrl += nuveiGetParams[i].replace(nuveiTokenName + '=', '');
+//        }
+//        // get order id
+//        if(nuveiGetParams[i].search('order_id') == 0) {
+//            nuveiVars.nuveiOrderId = nuveiGetParams[i].replace('order_id=', '');
+//        }
+//    }
+	
 	$.ajax({
         url: nuveiVars.ajaxUrl,
         type: 'post',
         dataType: 'json',
         data: {
             action: 'getNuveiVars',
-            orderId: nuveiVars.nuveiOrderId
+            orderId: nuveiVars.nuveiOrderId,
+			historyPage: searchParams.has('page') ? searchParams.get('page') : 1
         }
     })
     .done(function(resp) {
@@ -255,7 +260,19 @@ $(function(){
             
             nuveiVars               = {...nuveiVars, ...resp};
             nuveiVars.nuveiRefunds  = JSON.parse(nuveiVars.nuveiRefunds);
+			
+			// replace short history dates with full ones
+			if (resp.histories) {
+				var cnt = 0;
 
+				$('#history table tbody tr').each(function() {
+					var _self = $(this);
+
+					_self.find('td:first-child').text(resp.histories[cnt]);
+					cnt++;
+				});
+			}
+			
             loadNuveiExtras();
             return;
         }
