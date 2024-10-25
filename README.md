@@ -18,12 +18,12 @@ The correct payment methods at the checkout page can bring you global reach, hel
 - If using the Rebilling plugin functionality, please provide the DMN endpoint to the Integration and Technical Support teams, so it can be added to the merchant configuration.
 
 ## Manual Installation
-1. Download the plugin from Release page or form main branch.
-1. Extract the archive and upload the folders "admin", "catalog" and "system" to the OC install root directory.
-2. Check the version in "install.xml" and compare it with the version of installed Nuvei Modification if any. If the installed version is lower than the xml version, continue to the next step.
-3. Zip the install.xml file and rename it to 'some_name.ocmod.zip'.
-4. In the admin site, go to Extensions > Installer and upload the *.ocmod.zip file.
-5. After successful installation, go to Modifications and refresh the cache with the blue button at the top right of the page.
+1. If you have installed version of the plugin before v2.0:
+  1.1. From Extensions > Modifications disable Nuvei modification, then Clear and Refresh from the buttons.
+  1.2. From Extensions > Extensions find Nuvei Checkout and uninstall it.
+2. Download the plugin from Release page or from main branch.
+3. Extract the archive and upload the folders "admin", "catalog" and "system" to the OC install root directory.
+5. Install again Nuvei Checkout. Then in plugin' settings "Help Tools" check if the version is correct, also check in Extensions > Events for events starting with "nuvei_".
 
 ## Documentations
 For more information, please check the plugin [guide](https://docs.nuvei.com/documentation/plugins-docs/open-cart/).
