@@ -47,6 +47,27 @@ class ControllerExtensionPaymentNuvei extends Controller
             'extension/payment/nuvei/filterPaymentProviders' // The callback method
         );
         
+        // add custom JS in admin header
+        $this->model_setting_event->addEvent(
+            'nuvei_admin_add_script',  // Unique event code
+            'admin/controller/common/header/before',
+            'extension/payment/nuvei/addJsScriptsToAdmin' // The callback method
+        );
+        
+        // modify Orders list if any of the Order has Refund
+        $this->model_setting_event->addEvent(
+            'nuvei_admin_modify_orders_totals',  // Unique event code
+            'admin/model/sale/order/getOrders/after',
+            'extension/payment/nuvei/modifyOrdersTotals' // The callback method
+        );
+        
+        // add custom script in Order info page
+        $this->model_setting_event->addEvent(
+            'nuvei_admin_order_info_add_script',  // Unique event code
+            'admin/controller/sale/order/info/before',
+            'extension/payment/nuvei/addJsScriptsToAdminOrderInfo' // The callback method
+        );
+        
         // remove the plugin upgrade cookie if exists
         if (!empty($_COOKIE['nuvei_plugin_msg'])) {
             unset($_COOKIE['nuvei_plugin_msg']);
@@ -64,6 +85,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->model_setting_event->deleteEventByCode('nuvei_catalog_add_scripts');
         $this->model_setting_event->deleteEventByCode('nuvei_catalog_add_to_cart');
         $this->model_setting_event->deleteEventByCode('nuvei_catalog_filter_payment_methods');
+        $this->model_setting_event->deleteEventByCode('nuvei_admin_add_script');
+        $this->model_setting_event->deleteEventByCode('nuvei_admin_modify_orders_totals');
+        $this->model_setting_event->deleteEventByCode('nuvei_admin_order_info_add_script');
         
         // remove the plugin upgrade cookie if exists
         if (!empty($_COOKIE['nuvei_plugin_msg'])) {
@@ -219,6 +243,138 @@ class ControllerExtensionPaymentNuvei extends Controller
 //        $this->response->setOutput($this->load->view(NUVEI_CONTROLLER_PATH, $this->data));
 	}
 
+    /**
+     * Event callback method.
+     * 
+     * @param string $route
+     * @param array $data
+     */
+    public function addJsScriptsToAdmin(&$route, &$data)
+    {
+        if ($this->user->isLogged()) {
+            if (!empty($this->session->data['nuveiPluginGitVersion'])
+                && $this->session->data['nuveiPluginGitVersion'] > (int) str_replace('.', '', NUVEI_PLUGIN_V)
+            ) {
+                $this->document->addScript('view/javascript/nuvei_version_checker.js');
+            }
+            elseif ( ($git_v = NUVEI_CLASS::get_plugin_git_version()) > (int) str_replace('.', '', NUVEI_PLUGIN_V) ) {
+                $this->session->data['nuveiPluginGitVersion'] = $git_v;
+                $this->document->addScript('view/javascript/nuvei_version_checker.js');
+            }
+        }
+    }
+    
+    /**
+     * Event callback method.
+     * 
+     * @param string $route
+     * @param array $data
+     */
+    public function addJsScriptsToAdminOrderInfo(&$route, &$data)
+    {
+        $this->document->addScript('view/javascript/nuvei_orders.js');
+    }
+    
+    /**
+     * Event callback method.
+     * 
+     * @param string $route
+     * @param array $args
+     * @param array $results The list with Orders
+     * 
+     * @return void
+     */
+    public function modifyOrdersTotals(&$route, &$args, &$results)
+    {
+        if (empty($results) || !is_array($results)) {
+            return;
+        }
+        
+        $ordersIds = array();
+        
+        try {
+            // extract order ids
+            foreach ($results as $order) {
+                if (isset($order['order_id'])) {
+                    $ordersIds[] = (int) $order['order_id'];
+                }
+            }
+            
+            if (empty($ordersIds)) {
+                return;
+            }
+            
+            // get Nuvei field for the extracted orders
+            $queryResult = $this->db->query('SELECT order_id, payment_custom_field FROM ' . DB_PREFIX  
+                . 'order WHERE order_id IN (' . join(', ', $ordersIds) . ')');
+            
+            if (0 == $queryResult->num_rows) {
+                return;
+            }
+            
+            $nuveiData = array();
+            
+            foreach ($queryResult->rows as $row) {
+                $nuveiData[$row['order_id']] = $row;
+            }
+                
+            foreach($results as $key => $order) {
+                $refunds_sum = 0; // it is converted
+
+                if (!isset($nuveiData[$order['order_id']])
+                    || empty($nuveiData[$order['order_id']]['payment_custom_field'])
+                ) {
+                    continue;
+                }
+                
+                $nuvei_data = json_decode($nuveiData[$order['order_id']]['payment_custom_field'], true);
+
+                foreach($nuvei_data as $nuv_rec) {
+                    if(!empty($nuv_rec['status'])
+                        && 'approved' == $nuv_rec['status']
+                        && !empty($nuv_rec['transactionType'])
+                        && in_array($nuv_rec['transactionType'], array('Credit', 'Refund'))
+                    ) {
+                        $refunds_sum += $nuv_rec['totalAmount'];
+                    }
+
+                    if (in_array($nuv_rec['transactionType'], array('Auth', 'Sale'))
+                        && !empty($nuv_rec['totalCurrAlert'])
+                    ) {
+                        $results[$key]['order_status'] .= '&nbsp;<a title="Check transaction total/currency!" class="btn btn-warning"><i class="fa fa-warning"></i></a>';
+                    }
+                }
+
+                if($refunds_sum > 0) {
+                    $formated_total = '<del>' . $this->currency->format(
+                        $order['total'],
+                        $order['currency_code'],
+                        $order['currency_value']
+                    ) . '</del>';
+
+                    $converted_total = $order['total'] * $order['currency_value'];
+
+                    $formated_total .= '&nbsp;' . $this->currency->format(
+                        ($converted_total - $refunds_sum), 
+                        $order['currency_code'],
+                        1 // 1 in case the amout is converted, else - $this->data['currency_value']
+                    );
+
+                    $results[$key]['total'] = $formated_total;
+                }
+            }
+        }
+        catch (Exception $e) {
+            NUVEI_CLASS::create_log($this->plugin_settings, $e->getMessage(), 'Nuvei event exception.', 'WARN');
+            return;
+        }
+    }
+    
+    public function modifyOrderHiostoryRecords()
+    {
+        
+    }
+    
     /**
      * Process Ajax calls here.
      */
@@ -901,8 +1057,8 @@ class ControllerExtensionPaymentNuvei extends Controller
     {
         $order_id               = (int) $this->request->post['orderId'];
         $this->data             = $this->model_sale_order->getOrder($order_id);
-        $nuvei_last_trans       = [];
-        $nuvei_refunds          = [];
+        $nuvei_last_trans       = array();
+        $nuvei_refunds          = array();
         $remainingTotalCurr     = '';
         $nuvei_remaining_total  = $this->get_price($this->data['total']);
         $nuveiAllowRefundBtn    = 0;
@@ -910,6 +1066,19 @@ class ControllerExtensionPaymentNuvei extends Controller
         $nuveiAllowSettleBtn    = 0;
         $allowCancelSubsBtn     = 0;
         $isNuveiOrder           = NUVEI_PLUGIN_CODE == $this->data['payment_code'] ? 1 : 0;
+        $historyPage            = 1;
+        $histories              = array();
+        
+        if (isset($this->request->post['historyPage'])) {
+			$page = (int) $this->request->post['historyPage'];
+		}
+        
+        // replace short history date with full date
+		$historyResults = $this->model_sale_order->getOrderHistories($order_id, ($historyPage - 1) * 10, 10);
+        
+        foreach ($historyResults as $result) {
+			$histories[] = date($this->language->get('datetime_format'), strtotime($result['date_added']));
+		}
         
         if(1 == $isNuveiOrder
             && !empty($this->data['payment_custom_field']) 
@@ -987,6 +1156,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'orderTotal'                    => round($nuvei_remaining_total, 2),
             'currSymbolRight'               => $this->currency->getSymbolRight($this->data['currency_code']),
             'currSymbolLeft'                => $this->currency->getSymbolLeft($this->data['currency_code']),
+            'histories'                     => $histories,
             
             'nuveiRefundAmountError'        => $this->language->get('nuvei_refund_amount_error'),
             'nuveiUnexpectedError'          => $this->language->get('nuvei_unexpected_error'),

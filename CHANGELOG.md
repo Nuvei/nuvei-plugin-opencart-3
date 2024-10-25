@@ -4,7 +4,7 @@
 
 # 2.0
 ```
-	* Replace the modes with events.
+	* Replace the modes with events. Before update to version 2.0, disable Nuvei modification, Clear and Refresh. Remove "nuvei.ocmod.zip" from Installer menu. Then uninstall the existing plugin. Install the new one and fill your merchant credentials. To check the events were added search for "nuvei" in "Extensions > Events" menu.
 ```
 
 # 1.12
