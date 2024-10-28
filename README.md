@@ -19,13 +19,13 @@ The correct payment methods at the checkout page can bring you global reach, hel
 
 ## Manual Installation
 1. If you have installed version of the plugin before v2.0:
-  1.1. From Extensions > Modifications disable Nuvei modification, then Clear and Refresh from the buttons.
-  1.2. From Extensions > Extensions find Nuvei Checkout and uninstall it.
+  * 1.1. From Extensions > Modifications disable Nuvei modification, then Clear and Refresh from the buttons.
+  * 1.2. From Extensions > Extensions find Nuvei Checkout and uninstall it.
 2. Download the plugin from Release page or from main branch.
 3. Extract the archive and upload the folders "admin", "catalog" and "system" to the OC install root directory.
 5. Install again Nuvei Checkout. Then in plugin' settings "Help Tools" check if the version is correct, also check in Extensions > Events for events starting with "nuvei_".
 
-## Documentations
+## Documentation
 For more information, please check the plugin [guide](https://docs.nuvei.com/documentation/plugins-docs/open-cart/).
 
 ## Support
