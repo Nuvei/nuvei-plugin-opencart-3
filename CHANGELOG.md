@@ -2,6 +2,12 @@
 
 ---
 
+# 2.1
+```
+    * Removed the plugin option to auto-close or not the APM popup.
+    * Added additional parameter to the Simply Connect on the QA site.
+```
+
 # 2.0
 ```
 	* Replace the modes with events.

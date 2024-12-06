@@ -102,7 +102,7 @@ $_['entry_rebilling_plan_id']   = 'Rebilling Plan ID:';
 $_['entry_mask_user_details']   = 'Mask Users Details in the Log:';
 
 $_['entry_apm_window_type']         = 'APM window type:';
-$_['entry_auto_close_apm_popup']    = 'Auto close APM popup:';
+//$_['entry_auto_close_apm_popup']    = 'Auto close APM popup:';
 $_['nuvei_btn_remove_logs']         = 'Remove logs:';
 $_['nuvei_btn_remove_help']         = 'Only the oldest logs will be removed. The logs for last 30 days will be kept.';
 $_['nuvei_remove_log_confirm']      = 'Are you sure, you want to delete the logs?';

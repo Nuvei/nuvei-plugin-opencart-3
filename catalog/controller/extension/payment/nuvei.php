@@ -130,6 +130,11 @@ class ControllerExtensionPaymentNuvei extends Controller
             'sourceApplication'     => NUVEI_SOURCE_APP,
         ];
         
+        // add specific parameter for QA site
+        if ($this->isQaSite()) {
+            $data['nuvei_sdk_params']['webSdkEnv'] = 'devmobile';
+        }
+        
         $data['action'] = $this->url->link(NUVEI_CONTROLLER_PATH . '/process_payment')
 			. '&order_id=' . $this->session->data['order_id'];
         
@@ -386,15 +391,10 @@ class ControllerExtensionPaymentNuvei extends Controller
      */
     public function addJsScriptsToCatalog(&$route, &$data)
     {
-        if (!empty($_SERVER['SERVER_NAME']) 
-            && 'opencartautomation.gw-4u.com' == $_SERVER['SERVER_NAME']
-            && defined('NUVEI_SDK_URL_TAG')
-        ) {
-            $this->document->addScript(NUVEI_SDK_URL_TAG, 'footer');
-        }
-        else {
-            $this->document->addScript(NUVEI_SDK_URL_PROD, 'footer');
-        }
+        $this->document->addScript(
+            ($this->isQaSite() ? NUVEI_SDK_URL_TAG : NUVEI_SDK_URL_PROD), 
+            'footer'
+        );
 
         // add Nuvei common modify script
         $this->document->addScript('catalog/view/javascript/nuvei_common_js_mod.js', 'footer');
@@ -930,7 +930,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             $oo_params['urlDetails']['pendingUrl']  = $success_url;
             $oo_params['urlDetails']['failureUrl']  = $error_url;
         }
-        elseif (1 == @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_close_apm_popup']) {
+//        elseif (1 == @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'auto_close_apm_popup']) {
+        else {
             $oo_params['urlDetails']['successUrl']  = $oo_params['urlDetails']['failureUrl']
                                                     = $oo_params['urlDetails']['pendingUrl']
                                                     = NUVEI_SDK_AUTOCLOSE_URL;
@@ -1851,6 +1852,23 @@ class ControllerExtensionPaymentNuvei extends Controller
         );
 
         $this->return_message('DMN received.');
+    }
+    
+    /**
+     * Just check for the QA site.
+     * 
+     * @return bool
+     */
+    private function isQaSite()
+    {
+        if (!empty($_SERVER['SERVER_NAME']) 
+            && 'opencartautomation.gw-4u.com' == $_SERVER['SERVER_NAME']
+            && defined('NUVEI_SDK_URL_TAG')
+        ) {
+            return true;
+        }
+        
+        return false;
     }
     
 }

@@ -374,7 +374,7 @@
                                 </div>
                                 
                                 <!-- Auto close APMs popup, only for Sandbox mode -->
-                                <?php if(1 == @$data[NUVEI_SETTINGS_PREFIX . 'test_mode']): ?>
+                                <?php /* if(1 == @$data[NUVEI_SETTINGS_PREFIX . 'test_mode']): ?>
                                     <div class="form-group">
                                         <label class="col-sm-2 control-label"><?= $this->language->get('entry_auto_close_apm_popup'); ?></label>
                                         <div class="col-lg-10">
@@ -387,7 +387,7 @@
                                             <span class="help-block"><?= $this->language->get('text_apm_popup_help'); ?></span>
                                         </div>
                                     </div>
-                                <?php endif; ?>
+                                <?php endif; */ ?>
                                 
                                 <!-- Mask or unmask user details in the log -->
                                 <div class="form-group">
