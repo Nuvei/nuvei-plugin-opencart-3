@@ -37,6 +37,7 @@ $_['text_redirect']         = 'Redirect';
 $_['text_popup']            = 'Popup';
 $_['text_apm_popup_help']   = 'Works only when APM window type is "New tab".';
 
+// texts
 $_['text_sdk_transl_help']  = 'This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/ui-customization/#text-and-translation" target="_blank">check the Documentation</a>.';
 
 $_['text_block_cards_help'] = 'For examples <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/payment-customization/#Card_Processing" target="_blank"> check the Documentation.</a>';
@@ -50,7 +51,11 @@ $_['text_plugin_version']       = 'Plugin version is different from the Modifica
 
 $_['text_no_github_plugin_version']     = 'Nuvei message - can not find the plugin version into github changelog file.';
 $_['text_github_plugin_same_version']   = 'Git version is same as the current plugin version.';
-$_['text_github_new_plugin_version']    = 'There is <a href="https://github.com/SafeChargeInternational/nuvei_checkout_opencart3/blob/main/CHANGELOG.md" target="_blank">newer version</a> for Nuvei Checkout plugin.';
+$_['text_github_new_plugin_version']    = 'There is <a href="https://github.com/Nuvei/nuvei-plugin-opencart-3/blob/main/CHANGELOG.md" target="_blank">newer version</a> for Nuvei Checkout plugin.';
+
+$_['text_trans_notification']   = '<strong>Nuvei Payments notification.</strong> There is/are Transacion/s without corresponding Order/s in the Store. Please check the messages in Nuvei Checkout plugin > Help Tools section!';
+$_['text_trans_notif_tpl']      = 'The plugin cannot find corresponding Order for Transacion %TRANSACTION_ID%. Please, check it in Nuvei Control Panel!';
+$_['text_block_auto_void']      = 'Allow plugin to initiate auto Void request in case there is Payment (transaction), but there is no Order for this transaction in the Store. This logic is based on incoming DMNs. Event the auto Void is disabled, a message will be saved. The last messages can be view in the Help Tools.';
 
 // Entry					
 $_['entry_merchantId']      = 'Merchant ID:';
@@ -107,6 +112,9 @@ $_['nuvei_btn_remove_logs']         = 'Remove logs:';
 $_['nuvei_btn_remove_help']         = 'Only the oldest logs will be removed. The logs for last 30 days will be kept.';
 $_['nuvei_remove_log_confirm']      = 'Are you sure, you want to delete the logs?';
 $_['entry_sdk_version_help']        = 'It is not recommended to use Dev version on Production sites.';
+
+$_['entry_trans_problems']          = 'Transactions error messsages:';
+$_['entry_enable_auto_void']        = 'Enable Auto Void:';
 
 // Error					
 $_['error_permission']	      		= 'Warning: You do not have permission to modify Nuvei!'; 

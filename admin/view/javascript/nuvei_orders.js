@@ -1,7 +1,4 @@
-// be sure those consts are same as in php NUVEI_CLASS
-const nuveiControllerPath   = 'extension/payment/nuvei';
-const nuveiTokenName        = 'user_token';
-var nuveiVars               = {};
+var nuveiVars = {};
 
 // for the URL use NUVEI_CONTROLLER_PATH and NUVEI_TOKEN_NAME
 nuveiVars.ajaxUrl = 'index.php?route=' + nuveiControllerPath + '&' + nuveiTokenName + '=';

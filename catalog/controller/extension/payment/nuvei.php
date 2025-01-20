@@ -245,7 +245,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         NUVEI_CLASS::create_log($this->plugin_settings, @$_REQUEST, 'DMN request');
         
         ### Manual stop DMN for tests
-        //die('manually stoped');
+//        die('manually stoped');
         
         // exit
         if ('CARD_TOKENIZATION' == NUVEI_CLASS::get_param('type')) {
@@ -642,8 +642,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $message		= '';
         $send_message	= true;
-        $trans_id       = (int) NUVEI_CLASS::get_param('TransactionID');
-        $rel_tr_id      = (int) NUVEI_CLASS::get_param('relatedTransactionId');
+        $trans_id       = NUVEI_CLASS::get_param('TransactionID');
+        $rel_tr_id      = NUVEI_CLASS::get_param('relatedTransactionId');
         $payment_method = NUVEI_CLASS::get_param('payment_method', FILTER_SANITIZE_STRING);
         $total_amount   = (float) NUVEI_CLASS::get_param('totalAmount');
         $status_id      = $this->order_info['order_status_id'];
@@ -1244,43 +1244,12 @@ class ControllerExtensionPaymentNuvei extends Controller
     
     private function get_order_info_by_dmn()
     {
-//        $order_id               = (int) NUVEI_CLASS::get_param('order_id');
         $dmn_type               = NUVEI_CLASS::get_param('dmnType');
         $order_id               = 0;
         $trans_type             = NUVEI_CLASS::get_param('transactionType');
         $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
         $merchant_unique_id     = NUVEI_CLASS::get_param('merchant_unique_id');
         $merchant_uid_arr       = explode('_', $merchant_unique_id);
-//        $client_request_id      = NUVEI_CLASS::get_param('clientRequestId');
-//        $cri_parts              = explode('_', $client_request_id);
-        
-//        if (is_numeric($order_id) && 0 < $order_id) {
-//            $this->order_info = $this->model_checkout_order->getOrder($order_id);
-//        }
-//        elseif (!empty($merchant_unique_id) && false === strpos($merchant_unique_id, 'gwp_')) {
-//            if(is_numeric($merchant_unique_id)) {
-//                $order_id = (int) $merchant_unique_id;
-//            }
-//            // beacause of the modified merchant_unique_id - PayPal problem
-//            elseif(strpos($merchant_unique_id, '_') !== false) {
-//                $order_id_arr = explode('_', $merchant_unique_id);
-//                
-//                if(is_numeric($order_id_arr[0])) {
-//                    $order_id = (int) $order_id_arr[0];
-//                }
-//            }
-//        }
-//        elseif (!empty($cri_parts) && !empty($cri_parts[0]) && is_numeric($cri_parts[0])) {
-//            $order_id = $cri_parts[0];
-//        }
-//        elseif (!empty($relatedTransactionId)) {
-//            $query = $this->db->query(
-//                'SELECT order_id FROM ' . DB_PREFIX . 'order '
-//                . 'WHERE custom_field = ' . $relatedTransactionId
-//            );
-//            
-//            $order_id = (int) @$query->row['order_id'];
-//        }
         
         // default case
         if (is_array($merchant_uid_arr)
@@ -1313,29 +1282,11 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->order_info = $this->model_checkout_order->getOrder($order_id);
         
         if (!is_array($this->order_info) || empty($this->order_info)) {
-//            http_response_code(400);
-//            $this->return_message('DMN error - There is no order info, invalid Order ID.');
+            $this->create_auto_void();
             
-            // create Auto-Void
-//            $curr_time          = time();
-//            $order_request_time	= NUVEI_CLASS::get_param('customField2'); // time of create/update order
-//            
-//            if (!is_numeric($order_request_time)) {
-//                $order_request_time = strtotime($order_request_time);
-//            }
-//            
-//            if ($curr_time - $order_request_time > 1800) {
-//                $this->create_auto_void();
-//            }
-            // /create Auto-Void
-            
-//            if (in_array($trans_type, ['Auth', 'Sale'])) {
-//                http_response_code(400);
-//                $this->return_message('There is no order info, Let\'s wait one more DMN try.');
-//            }
-            
+            // if the auto-void does not break the flow just return 200
             http_response_code(200);
-            $this->return_message('There is no order info.');
+            $this->return_message('There is no Order for this Transaction!.');
         }
         
         // check for Nuvei Order
@@ -1357,12 +1308,43 @@ class ControllerExtensionPaymentNuvei extends Controller
             return;
         }
         
+        // check the time
+        $curr_time          = time();
+        $order_request_time	= NUVEI_CLASS::get_param('customField2'); // time of create/update order
+
+        if (!is_numeric($order_request_time)) {
+            $order_request_time = strtotime($order_request_time);
+        }
+
+        // it is too early for auto void
+        if ($curr_time - $order_request_time < 1800) {
+            http_response_code(400);
+            $this->return_message('There is no order info, Let\'s wait one more DMN try.');
+        }
+        
+        // save notifiation
+        $transId    = $this->db->escape(NUVEI_CLASS::get_param('TransactionID'));
+        $query      = "INSERT INTO `" . DB_PREFIX . "setting` 
+            (`store_id`,  `code`, `key`, `value`, `serialized`)
+            VALUES (0, '" . trim(NUVEI_SETTINGS_PREFIX, '_') . "', 'trans_problem_" . $transId . "', '". $transId ."', 0)";
+        
+        $this->db->query($query);
+        //
+        
+        // disabled auto-void
+        if (!isset($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'enable_auto_void'])
+            || 'yes' != $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'enable_auto_void']
+        ) {
+            NUVEI_CLASS::create_log($this->plugin_settings, 'The Auto Void is disabled.');
+            return;
+        }
+        
         $notify_url     = $this->url->link(NUVEI_CONTROLLER_PATH . '/callback');
         $void_params    = [
             'clientUniqueId'        => date('YmdHis') . '-' . uniqid(),
             'amount'                => (float) NUVEI_CLASS::get_param('totalAmount'),
             'currency'              => NUVEI_CLASS::get_param('currency'),
-            'relatedTransactionId'  => NUVEI_CLASS::get_param('TransactionID', FILTER_SANITIZE_NUMBER_INT),
+            'relatedTransactionId'  => $transId,
             'url'                   => $notify_url,
             'urlDetails'            => ['notificationUrl' => $notify_url],
             'customData'            => 'This is Auto-Void transaction',

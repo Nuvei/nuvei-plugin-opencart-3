@@ -125,6 +125,20 @@
                                         </select>
                                     </div>
                                 </div>
+                                
+                                <!-- Auto-Void -->
+                                <div class="form-group required">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_enable_auto_void'); ?></label>
+                                    <div class="col-sm-10">
+                                        <select class="form-control" name="<?= NUVEI_SETTINGS_PREFIX; ?>enable_auto_void" required="">
+                                            <option value="no" <?php if (@strtolower($data[NUVEI_SETTINGS_PREFIX . 'enable_auto_void']) == "no"): ?> selected="selected"<?php endif; ?>><?= $this->language->get('text_no'); ?></option>
+
+                                            <option value="yes" <?php if (@strtolower($data[NUVEI_SETTINGS_PREFIX . 'enable_auto_void']) == "yes"): ?> selected="selected"<?php endif; ?>><?= $this->language->get('text_yes'); ?></option>
+                                        </select>
+                                        
+                                        <span class="help-block"><?= $this->language->get('text_block_auto_void'); ?></span>
+                                    </div>
+                                </div>
 
                                 <!-- Save Logs -->
                                 <div class="form-group required">
@@ -373,22 +387,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Auto close APMs popup, only for Sandbox mode -->
-                                <?php /* if(1 == @$data[NUVEI_SETTINGS_PREFIX . 'test_mode']): ?>
-                                    <div class="form-group">
-                                        <label class="col-sm-2 control-label"><?= $this->language->get('entry_auto_close_apm_popup'); ?></label>
-                                        <div class="col-lg-10">
-                                            <select name="<?= NUVEI_SETTINGS_PREFIX; ?>auto_close_apm_popup" class="form-control">
-                                                <option value="1" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'auto_close_apm_popup'] == '1'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_yes'); ?></option>
-                                            
-                                                <option value="0" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'auto_close_apm_popup'] == '0'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_no'); ?></option>
-                                            </select>
-                                            
-                                            <span class="help-block"><?= $this->language->get('text_apm_popup_help'); ?></span>
-                                        </div>
-                                    </div>
-                                <?php endif; */ ?>
-                                
                                 <!-- Mask or unmask user details in the log -->
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_mask_user_details'); ?></label>
@@ -462,6 +460,19 @@
                                         
                                         <div class="col-lg-10">
                                             <span class="help-block"><?= $this->language->get('text_change_order_status'); ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Load Transaction error messages -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_trans_problems'); ?></label>
+                                    
+                                    <div class="col-sm-10">
+                                        <div class="">
+                                            <div id="nuvei_trans_msgs" class=""></div>
+
+                                            <button id="nuvei_load_tr_msgs" type="button" class="btn btn-primary">Load</button>
                                         </div>
                                     </div>
                                 </div>

@@ -12,6 +12,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         'secret',
         'hash',
         'payment_action',
+        'enable_auto_void',
         'create_logs',
     ];
     
@@ -252,14 +253,41 @@ class ControllerExtensionPaymentNuvei extends Controller
     public function addJsScriptsToAdmin(&$route, &$data)
     {
         if ($this->user->isLogged()) {
+            $this->load->language(NUVEI_CONTROLLER_PATH);
+            
+            // plugin version checker
             if (!empty($this->session->data['nuveiPluginGitVersion'])
                 && $this->session->data['nuveiPluginGitVersion'] > (int) str_replace('.', '', NUVEI_PLUGIN_V)
             ) {
                 $this->document->addScript('view/javascript/nuvei_version_checker.js');
+                $this->document->addScript("data:text/javascript;charset=utf-8, var nuveiPluginUpgradeNotification = '"
+                    . addslashes($this->language->get('text_github_new_plugin_version')) . "';");
             }
             elseif ( ($git_v = NUVEI_CLASS::get_plugin_git_version()) > (int) str_replace('.', '', NUVEI_PLUGIN_V) ) {
                 $this->session->data['nuveiPluginGitVersion'] = $git_v;
+                
                 $this->document->addScript('view/javascript/nuvei_version_checker.js');
+                $this->document->addScript("data:text/javascript;charset=utf-8, var nuveiPluginUpgradeNotification = '"
+                    . addslashes($this->language->get('text_github_new_plugin_version')) . "';");
+            }
+            
+            // missing orders notification
+            $query = "SELECT setting_id "
+                . "FROM `" . DB_PREFIX . "setting` "
+                . 'WHERE code = "' . trim(NUVEI_SETTINGS_PREFIX, '_') . '" '
+                    . 'AND `key` LIKE "trans_problem%" '
+                . 'ORDER BY setting_id DESC LIMIT 1';
+
+            $res = $this->db->query($query);
+
+            if(isset($res->num_rows) && $res->num_rows > 0) {
+                $this->document->addScript('view/javascript/nuvei_trans_notification.js');
+                
+                $this->document->addScript("data:text/javascript;charset=utf-8, "
+                    . "var nuveiTransNotification = '" 
+                        . addslashes($this->language->get('text_trans_notification')) . "'; "
+                    . "var nuveiTransNotificationTpl = '" 
+                        . addslashes($this->language->get('text_trans_notif_tpl')) . "'; ");
             }
         }
     }
@@ -370,11 +398,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
     }
     
-    public function modifyOrderHiostoryRecords()
-    {
-        
-    }
-    
     /**
      * Process Ajax calls here.
      */
@@ -383,10 +406,6 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->ajax_action = $this->request->post['action'];
         
         switch ($this->ajax_action) {
-//            case 'checkForUpdate':
-//                $this->check_for_update();
-//                exit;
-                
             case 'getNuveiVars':
                 $this->get_nuvei_vars();
                 exit;
@@ -394,14 +413,6 @@ class ControllerExtensionPaymentNuvei extends Controller
             case 'refund':
                 $this->order_refund();
                 exit;
-                
-//            case 'refundManual':
-//                $this->order_refund(true);
-//                exit;
-                
-//            case 'deleteManualRefund':
-//                $this->delete_refund();
-//                exit;
                 
             case 'void':
             case 'settle':
@@ -412,10 +423,66 @@ class ControllerExtensionPaymentNuvei extends Controller
                 $this->subscription_cancel();
                 exit;
                 
+            case 'getNuveiTransNotifications':
+                $this->getNuveiTransNotifications();
+                exit;
+                
             default:
                 echo json_encode(array('status' => 0, 'msg' => 'Unknown order action: ' . $this->ajax_action));
                 exit;
         }
+    }
+    
+    private function deleteNuveiTransNotifications()
+    {
+        $settingId = (int) $this->request->post['settingId'];
+        
+        if (!is_numeric($settingId) || $settingId < 0) {
+            exit(json_encode(array(
+                'success' => 0,
+            )));
+        }
+        
+        $this->db->query('DELETE FROM ' . DB_PREFIX . 'setting WHERE setting_id = ' . $settingId);
+        
+        exit(json_encode(array(
+            'success' => $this->db->countAffected() > 0 ? 1 : 0,
+        )));
+    }
+    
+    private function getNuveiTransNotifications()
+    {
+        $query = "SELECT setting_id, value "
+            . "FROM `" . DB_PREFIX . "setting` "
+            . 'WHERE code = "' . trim(NUVEI_SETTINGS_PREFIX, '_') . '" '
+                . 'AND `key` LIKE "trans_problem%" '
+            . 'ORDER BY setting_id DESC LIMIT 20';
+
+        $res = $this->db->query($query);
+
+        NUVEI_CLASS::create_log(
+            $this->plugin_settings,
+			$res,
+			'order_refund()'
+		);
+        
+        if(!isset($res->num_rows) || $res->num_rows == 0) {
+            exit(json_encode(array(
+                'status'    => 0,
+                'data'      => [],
+            )));
+        }
+        
+        $data = array();
+        
+        foreach ($res->rows as $row) {
+            $data[$row['setting_id']] = $row['value'];
+        }
+        
+        exit(json_encode(array(
+            'status'    => 1,
+            'data'      => $data,
+        )));
     }
     
     private function order_refund($is_manual = false)

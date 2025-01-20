@@ -6,6 +6,8 @@
 ```
     * Removed the plugin option to auto-close or not the APM popup.
     * Added additional parameter to the Simply Connect on the QA site.
+    * Save notification when come Sale/Auth DMN and there is no Ordert for its Transaction.
+    * Added an option to tunr off/on the auto-void logic.
 ```
 
 # 2.0
