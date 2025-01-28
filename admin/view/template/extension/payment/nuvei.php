@@ -443,7 +443,7 @@
                                 <!-- DMN URL -->
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_dmn_url'); ?></label>
-                                    <div class="col-lg-10">
+                                    <div class="col-sm-10">
                                         <div class="form-control"><?= $data['nuvei_dmn_url']; ?></div>
                                     </div>
                                 </div>

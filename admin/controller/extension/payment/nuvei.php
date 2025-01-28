@@ -259,16 +259,16 @@ class ControllerExtensionPaymentNuvei extends Controller
             if (!empty($this->session->data['nuveiPluginGitVersion'])
                 && $this->session->data['nuveiPluginGitVersion'] > (int) str_replace('.', '', NUVEI_PLUGIN_V)
             ) {
-                $this->document->addScript('view/javascript/nuvei_version_checker.js');
                 $this->document->addScript("data:text/javascript;charset=utf-8, var nuveiPluginUpgradeNotification = '"
                     . addslashes($this->language->get('text_github_new_plugin_version')) . "';");
+                $this->document->addScript('view/javascript/nuvei_version_checker.js');
             }
             elseif ( ($git_v = NUVEI_CLASS::get_plugin_git_version()) > (int) str_replace('.', '', NUVEI_PLUGIN_V) ) {
                 $this->session->data['nuveiPluginGitVersion'] = $git_v;
                 
-                $this->document->addScript('view/javascript/nuvei_version_checker.js');
                 $this->document->addScript("data:text/javascript;charset=utf-8, var nuveiPluginUpgradeNotification = '"
                     . addslashes($this->language->get('text_github_new_plugin_version')) . "';");
+                $this->document->addScript('view/javascript/nuvei_version_checker.js');
             }
             
             // missing orders notification
@@ -281,13 +281,16 @@ class ControllerExtensionPaymentNuvei extends Controller
             $res = $this->db->query($query);
 
             if(isset($res->num_rows) && $res->num_rows > 0) {
-                $this->document->addScript('view/javascript/nuvei_trans_notification.js');
-                
-                $this->document->addScript("data:text/javascript;charset=utf-8, "
+                $this->document->addScript("data:text/javascript; charset=utf-8, "
                     . "var nuveiTransNotification = '" 
                         . addslashes($this->language->get('text_trans_notification')) . "'; "
                     . "var nuveiTransNotificationTpl = '" 
-                        . addslashes($this->language->get('text_trans_notif_tpl')) . "'; ");
+                        . addslashes($this->language->get('text_trans_notif_tpl')) . "'; "
+                    . "var nuveiControllerPath = '" . NUVEI_CONTROLLER_PATH . "'; "
+                    . "var nuveiTokenName = '" . NUVEI_TOKEN_NAME . "'; "
+                );
+                
+                $this->document->addScript('view/javascript/nuvei_trans_notification.js');
             }
         }
     }
@@ -300,8 +303,11 @@ class ControllerExtensionPaymentNuvei extends Controller
      */
     public function addJsScriptsToAdminOrderInfo(&$route, &$data)
     {
-        $this->document->addScript('view/javascript/nuvei_orders.js');
-    }
+        $this->document->addScript("data:text/javascript; charset=utf-8, "
+            . "var nuveiControllerPath = '" . NUVEI_CONTROLLER_PATH . "'; "
+            . "var nuveiTokenName = '" . NUVEI_TOKEN_NAME . "'; "
+        );
+        $this->document->addScript('view/javascript/nuvei_orders.js');    }
     
     /**
      * Event callback method.

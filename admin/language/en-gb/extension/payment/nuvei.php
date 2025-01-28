@@ -113,7 +113,7 @@ $_['nuvei_btn_remove_help']         = 'Only the oldest logs will be removed. The
 $_['nuvei_remove_log_confirm']      = 'Are you sure, you want to delete the logs?';
 $_['entry_sdk_version_help']        = 'It is not recommended to use Dev version on Production sites.';
 
-$_['entry_trans_problems']          = 'Transactions error messsages:';
+$_['entry_trans_problems']          = 'Transactions error messages:';
 $_['entry_enable_auto_void']        = 'Enable Auto Void:';
 
 // Error					
