@@ -413,14 +413,28 @@
                                     </div>
                                 </div>
 
+                                <!-- SDK Styling -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_sdk_style'); ?></label>
+                                    <div class="col-lg-10">
+                                        <textarea name="<?= NUVEI_SETTINGS_PREFIX; ?>sdk_style" rows="5" class="form-control textarea-autosize" placeholder='{
+	"base": {
+		"iconColor": "#c4f0ff"
+	}
+ }'><?= @$data[NUVEI_SETTINGS_PREFIX . 'sdk_style']; ?></textarea>
+
+                                        <span class="help-block"><?= $this->language->get('text_sdk_style_help'); ?></span>
+                                    </div>
+                                </div>
+								
                                 <!-- SDK transaltions -->
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_sdk_transl'); ?></label>
                                     <div class="col-lg-10">
                                         <textarea name="<?= NUVEI_SETTINGS_PREFIX; ?>sdk_transl" rows="5" class="form-control textarea-autosize" placeholder='{
-"doNotHonor":"you dont have enough money",
-"DECLINE":"declined"
-}'>"<?= @$data[NUVEI_SETTINGS_PREFIX . 'sdk_transl']; ?></textarea>
+	"doNotHonor":"you dont have enough money",
+	"DECLINE":"declined"
+}'><?= @$data[NUVEI_SETTINGS_PREFIX . 'sdk_transl']; ?></textarea>
 
                                         <span class="help-block"><?= $this->language->get('text_sdk_transl_help'); ?></span>
                                     </div>

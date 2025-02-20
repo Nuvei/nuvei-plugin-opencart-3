@@ -89,7 +89,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         
         $locale     = substr($this->get_locale(), 0, 2);
-        $sdk_transl = html_entity_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_transl']);
+        $sdk_transl	= html_entity_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_transl']);
+        $sdk_style	= html_entity_decode($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_style']);
         
         // set the template data
         $data = $this->load->language(NUVEI_CONTROLLER_PATH);
@@ -128,6 +129,7 @@ class ControllerExtensionPaymentNuvei extends Controller
                 ]
             ],
             'sourceApplication'     => NUVEI_SOURCE_APP,
+			'fieldStyle'			=> json_decode($sdk_style, true),
         ];
         
         // add specific parameter for QA site

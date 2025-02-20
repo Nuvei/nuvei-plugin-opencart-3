@@ -8,7 +8,7 @@
  * @author Nuvei
  */
 
-const NUVEI_PLUGIN_V            = '2.1';
+const NUVEI_PLUGIN_V            = '2.1.0';
 const NUVEI_PLUGIN_CODE         = 'nuvei';
 const NUVEI_PLUGIN_TITLE        = 'Nuvei';
 
