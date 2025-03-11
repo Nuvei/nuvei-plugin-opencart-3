@@ -415,32 +415,40 @@ class ControllerExtensionPaymentNuvei extends Controller
         if (isset($this->request->post['product_id'])) {
 			$product_id = (int) $this->request->post['product_id'];
 		}
-        
+		
         $this->load->model('catalog/product');
 
 		$product_info = $this->model_catalog_product->getProduct($product_id);
         
         if ($product_info) {
-            $recurrings     = $this->model_catalog_product->getProfiles($product_info['product_id']);
-            $recurring_id   = 0;
-            $json           = array();
+            $recurrings		= $this->model_catalog_product->getProfiles($product_info['product_id']);
+			$currRecurr		= array();
+            $json			= array();
+			$recurring_id	= 0;
+			
+			if (isset($this->request->post['recurring_id'])) {
+				$recurring_id = (int) $this->request->post['recurring_id'];
+			}
+			
+			foreach ($recurrings as $data) {
+				if ($data['recurring_id'] == $recurring_id) {
+					$currRecurr = $data;
+					break;
+				}
+			}
             
             $this->language->load(NUVEI_CONTROLLER_PATH);
             
-            if (isset($this->request->post['recurring_id'])) {
-                $recurring_id = (int) $this->request->post['recurring_id'];
-            }
-            
-            // for the incoming product
-            if ($recurrings 
-                && isset($recurrings[$recurring_id]['name']) 
-                && strpos(strtolower($recurrings[$recurring_id]['name']), NUVEI_PLUGIN_CODE) !== false
+			// for the incoming product
+            if (!empty($currRecurr) 
+                && isset($currRecurr['name']) 
+                && strpos(strtolower($currRecurr['name']), NUVEI_PLUGIN_CODE) !== false
             ) {
                 if(count($this->cart->getProducts())) {
-                    $json['error']['recurring'] = $this->language->get('nuvei_rec_error');
+                    $json['error_nuvei'] = $this->language->get('nuvei_rec_error');
                 }
                 if(empty($this->session->data['customer_id'])) {
-                    $json['error']['recurring'] = $this->language->get('nuvei_rec_user_error');
+                    $json['error_nuvei'] = $this->language->get('nuvei_rec_user_error');
                 }
             }
             // check for rebilling products into the Cart
@@ -460,8 +468,8 @@ class ControllerExtensionPaymentNuvei extends Controller
                 }
             }
             
+			// On error, end the JSON response and stop further execution
             if (isset($json['error_nuvei']) || isset($json['error'])) {
-                // Send the JSON response and stop further execution
                 $this->response->addHeader('Content-Type: application/json');
                 $this->response->setOutput(json_encode($json));
 

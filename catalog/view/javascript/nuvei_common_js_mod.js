@@ -32,6 +32,7 @@ window.onload = function() {
 
                     $('#cart > ul').load('index.php?route=common/cart/info ul li');
                 }
+                
                 // Nuvei Mod
                 if (json['error_nuvei']) {
                     console.log(json['error_nuvei'])

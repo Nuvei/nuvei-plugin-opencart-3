@@ -9,6 +9,7 @@
     * Save notification when come Sale/Auth DMN and there is no Ordert for its Transaction.
     * Added an option to turn off/on the auto-void logic.
     * Added an option to modify Simply Connect style.
+    * Fixed the check for the recurring products and Guest users.
 ```
 
 # 2.0
