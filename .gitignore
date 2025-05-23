@@ -4,3 +4,5 @@ config.php
 .buildpath
 .project
 .settings
+/.ptp-sync/
+.ptp-sync-folder

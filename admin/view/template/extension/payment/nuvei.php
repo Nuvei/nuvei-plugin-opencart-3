@@ -163,6 +163,7 @@
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_geo_zone'); ?></label>
                                     <div class="col-sm-10">
                                         <select name="<?= NUVEI_SETTINGS_PREFIX; ?>geo_zone_id" class="form-control">
+                                            <option value="0"><?= $this->language->get('text_all_zones'); ?></option>
                                             <?php foreach($data['geo_zones'] as $geo_zone): ?>
                                                 <option value="<?= $geo_zone['geo_zone_id']; ?>" <?php if($geo_zone['geo_zone_id'] == @$data[NUVEI_SETTINGS_PREFIX . 'geo_zone_id']): ?>selected="selected"<?php endif; ?>>
                                                     <?= $geo_zone['name']; ?>

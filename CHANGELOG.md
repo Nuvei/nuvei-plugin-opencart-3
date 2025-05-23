@@ -2,6 +2,11 @@
 
 ---
 
+# 2.1.1
+```
+    * In plugin' settings > Geo Zone, was added "All Zones" option.
+```
+
 # 2.1.0
 ```
     * Removed the plugin option to auto-close or not the APM popup.
