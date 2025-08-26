@@ -95,6 +95,21 @@ class ControllerExtensionPaymentNuvei extends Controller
         // set the template data
         $data = $this->load->language(NUVEI_CONTROLLER_PATH);
         
+        // add GooglePay settings
+        $google_pay_settings = array(
+            'locale' => $locale,
+        );
+        
+        if (!empty($g_merchat_id = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'gpay_merchant_id'])) {
+            $google_pay_settings['merchantId'] = $g_merchat_id;
+        }
+        if (!empty($g_button_color = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'gpay_btn_color'])) {
+            $google_pay_settings['buttonColor'] = $g_button_color;
+        }
+        if (!empty($g_button_type = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'gpay_btn_text'])) {
+            $google_pay_settings['buttonType'] = $g_button_type;
+        }
+        
         $data['nuvei_sdk_params'] = [
             'renderTo'               => '#nuvei_checkout',
             'strict'                 => false,
@@ -123,10 +138,11 @@ class ControllerExtensionPaymentNuvei extends Controller
             'i18n'                   => json_decode($sdk_transl, true),
             'theme'                  => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'sdk_theme'],
             'apmWindowType'          => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type'],
-            'apmConfig'              => [
-                'googlePay' => [
-                    'locale' => $locale
-                ]
+            'apmConfig'                 => [
+                'googlePay' => $google_pay_settings,
+                'applePay'  => array(
+					'locale'    => $locale,
+				),
             ],
             'sourceApplication'     => NUVEI_SOURCE_APP,
 			'fieldStyle'			=> json_decode($sdk_style, true),

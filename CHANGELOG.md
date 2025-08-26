@@ -2,6 +2,11 @@
 
 ---
 
+# 2.2.0
+```
+    * Exposed additional settings for Google Pay.
+```
+
 # 2.1.1
 ```
     * In plugin' settings > Geo Zone, was added "All Zones" option.

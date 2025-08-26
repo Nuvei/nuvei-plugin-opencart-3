@@ -441,6 +441,42 @@
                                     </div>
                                 </div>
                                 
+                                <!-- Google Pay Merchant ID -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_gpay_merchant_id'); ?></label>
+                                    <div class="col-lg-10">
+                                        <input type="text" name="<?= NUVEI_SETTINGS_PREFIX; ?>}gpay_merchant_id" value="<?= @$data[NUVEI_SETTINGS_PREFIX . '}gpay_merchant_id']; ?>" class="form-control" />
+                                        
+                                        <span class="help-block"><?= $this->language->get('text_gpay_merchant_id_help'); ?></span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Google Pay Button color -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_gpay_btn_color'); ?></label>
+                                    <div class="col-lg-10">
+                                        <select name="<?= NUVEI_SETTINGS_PREFIX; ?>gpay_btn_color" class="form-control">
+                                            <option value="black" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'gpay_btn_color'] == 'black'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_black'); ?></option>
+                                            <option value="white" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'gpay_btn_color'] == 'white'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_white'); ?></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Google Pay Button text -->
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label"><?= $this->language->get('entry_gpay_btn_text'); ?></label>
+                                    <div class="col-lg-10">
+                                        <select name="<?= NUVEI_SETTINGS_PREFIX; ?>gpay_btn_text" class="form-control">
+                                            <option value="buy" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'gpay_btn_text'] == 'buy'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_buy'); ?></option>
+                                            <option value="book" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'gpay_btn_text'] == 'book'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_book'); ?></option>
+                                            <option value="checkout" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'gpay_btn_text'] == 'checkout'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_checkout'); ?></option>
+                                            <option value="order" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'gpay_btn_text'] == 'order'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_order'); ?></option>
+                                            <option value="pay" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'gpay_btn_text'] == 'pay'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_pay'); ?></option>
+                                            <option value="plain" <?php if(@$data[NUVEI_SETTINGS_PREFIX . 'gpay_btn_text'] == 'plain'): ?>selected="selected"<?php endif; ?>><?= $this->language->get('text_plain'); ?></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
                                 <!-- Rebilling Plan ID -->
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label"><?= $this->language->get('entry_rebilling_plan_id'); ?></label>
