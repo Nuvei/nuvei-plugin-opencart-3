@@ -16,10 +16,17 @@ class ControllerExtensionPaymentNuvei extends Controller
 {
     private $plugin_settings    = [];
     private $order_addresses    = [];
+    private $requestData        = []; // holds the get and the post data
     private $new_order_status   = 0;
     private $total_curr_alert   = false;
     private $is_user_logged;
 	private $order_info;
+    
+    public function __construct($registry) {
+        parent::__construct($registry);
+        
+        $this->requestData = array_merge($this->request->get, $this->request->post);
+    }
     
 	public function index()
     {
@@ -97,18 +104,28 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         // add GooglePay settings
         $google_pay_settings = array(
-            'locale' => $locale,
+            'locale'            => $locale,
+            'buttonLocation'    => 'gallery',
         );
         
-        if (!empty($g_merchat_id = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'gpay_merchant_id'])) {
+        $g_merchat_id   = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'gpay_merchant_id'] ?? '';
+        $g_button_color = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'gpay_btn_color'] ?? '';
+        $g_button_type  = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'gpay_btn_text'] ?? '';
+        
+        if (!empty($g_merchat_id)) {
             $google_pay_settings['merchantId'] = $g_merchat_id;
         }
-        if (!empty($g_button_color = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'gpay_btn_color'])) {
+        if (!empty($g_button_color)) {
             $google_pay_settings['buttonColor'] = $g_button_color;
         }
-        if (!empty($g_button_type = $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'gpay_btn_text'])) {
+        if (!empty($g_button_type)) {
             $google_pay_settings['buttonType'] = $g_button_type;
         }
+        
+        $applePaySettings = array(
+            'locale'            => $locale,
+            'buttonLocation'    => 'gallery',
+        );
         
         $data['nuvei_sdk_params'] = [
             'renderTo'               => '#nuvei_checkout',
@@ -140,9 +157,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'apmWindowType'          => $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'apm_window_type'],
             'apmConfig'                 => [
                 'googlePay' => $google_pay_settings,
-                'applePay'  => array(
-					'locale'    => $locale,
-				),
+                'applePay'  => $applePaySettings,
             ],
             'sourceApplication'     => NUVEI_SOURCE_APP,
 			'fieldStyle'			=> json_decode($sdk_style, true),
@@ -184,11 +199,13 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $this->session->data['nuvei_last_oo_details'] = [];
         
+        $invoice_id = NUVEI_CLASS::get_param($this->requestData, 'invoice_id', 'int');
+                
 		if(!empty($this->request->get['order_id'])) {
 			$order_id = (int) $this->request->get['order_id'];
 		}
-		elseif(NUVEI_CLASS::get_param('invoice_id')) {
-			$arr		= explode("_", NUVEI_CLASS::get_param('invoice_id'));
+		elseif( !empty($invoice_id) ) {
+			$arr		= explode("_", $invoice_id);
 			$order_id	= (int) $arr[0];
 		}
 		else {
@@ -228,11 +245,13 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         NUVEI_CLASS::create_log($this->plugin_settings, @$_REQUEST, 'Order FAIL');
         
+        $invoice_id = NUVEI_CLASS::get_param($this->requestData, 'invoice_id', 'int');
+        
 		if(!empty($this->request->get['order_id'])) {
-			$order_id = intval($this->request->get['order_id']);
+			$order_id = (int) $this->request->get['order_id'];
 		}
-		elseif(NUVEI_CLASS::get_param('invoice_id')) {
-			$arr		= explode("_", NUVEI_CLASS::get_param('invoice_id'));
+		elseif( !empty($invoice_id) ) {
+			$arr		= explode("_", $invoice_id);
 			$order_id	= (int) $arr[0];
 		}
 		else {
@@ -266,7 +285,9 @@ class ControllerExtensionPaymentNuvei extends Controller
 //        die('manually stoped');
         
         // exit
-        if ('CARD_TOKENIZATION' == NUVEI_CLASS::get_param('type')) {
+        $trType = NUVEI_CLASS::get_param($this->requestData, 'type');
+        
+        if ('CARD_TOKENIZATION' == $trType) {
             $this->return_message('CARD_TOKENIZATION DMN, wait for the next one.');
         }
         
@@ -296,26 +317,9 @@ class ControllerExtensionPaymentNuvei extends Controller
             $this->return_message('This is Pending DMN, but Order is already processed.');
         }
         
-        $order_id = $this->order_info['order_id'];
-        
-        # in Case of CPanel Refund DMN
-//        if(in_array($trans_type, array('Credit', 'Refund'))
-//            && strpos(NUVEI_CLASS::get_param('clientUniqueId'), 'gwp_') !== false
-//        ) {
-//            $this->model_checkout_order->addOrderHistory(
-//                $order_id,
-//                $this->order_info['order_status_id'],
-//                $this->language->get('CPanel Refund detected. Please, create a manual refund!'),
-//                false
-//            );
-//
-//            $this->return_message('DMN received.');
-//        }
-        # in Case of CPanel Refund DMN END
-        
+        $order_id               = $this->order_info['order_id'];
         $this->new_order_status = $this->order_info['order_status_id'];
-        
-        $trans_type = NUVEI_CLASS::get_param('transactionType', FILTER_SANITIZE_STRING);
+        $trans_type             = NUVEI_CLASS::get_param($this->requestData, 'transactionType');
         
         # Sale and Auth
         if(in_array($trans_type, array('Sale', 'Auth'))) {
@@ -385,12 +389,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         $this->session->data['nuvei_last_oo_details'] = [];
 		
         $this->order_info   = $this->model_checkout_order->getOrder($this->request->get['order_id']);
-		
-		$success_url        = $this->url->link(NUVEI_CONTROLLER_PATH . '/success') 
-            . '&order_id=' . $this->request->get['order_id'];
-		
-        $error_url          = $this->url->link(NUVEI_CONTROLLER_PATH . '/fail') 
-            . '&order_id=' . $this->request->get['order_id'];
+        $order_id           = NUVEI_CLASS::get_param($this->requestData, 'order_id', 'int');
+		$success_url        = $this->url->link(NUVEI_CONTROLLER_PATH . '/success') . '&order_id=' . $order_id;
+        $error_url          = $this->url->link(NUVEI_CONTROLLER_PATH . '/fail') . '&order_id=' . $order_id;
 		
 		if(!empty($this->request->post['sc_transaction_id'])
             && is_numeric($this->request->post['sc_transaction_id'])
@@ -531,9 +532,9 @@ class ControllerExtensionPaymentNuvei extends Controller
      */
     private function validate_dmn()
     {
-        $advanceResponseChecksum = NUVEI_CLASS::get_param('advanceResponseChecksum');
-		$responsechecksum        = NUVEI_CLASS::get_param('responsechecksum');
-		
+        $advanceResponseChecksum    = NUVEI_CLASS::get_param($this->requestData, 'advanceResponseChecksum');
+        $responsechecksum           = NUVEI_CLASS::get_param($this->requestData, 'responsechecksum');
+        
 		if (empty($advanceResponseChecksum) && empty($responsechecksum)) {
             NUVEI_CLASS::create_log(
                 $this->plugin_settings,
@@ -549,15 +550,15 @@ class ControllerExtensionPaymentNuvei extends Controller
             $str = hash(
                 $this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'),
                 trim($this->config->get(NUVEI_SETTINGS_PREFIX . 'secret'))
-                    . NUVEI_CLASS::get_param('totalAmount')
-                    . NUVEI_CLASS::get_param('currency')
-                    . NUVEI_CLASS::get_param('responseTimeStamp')
-                    . NUVEI_CLASS::get_param('PPP_TransactionID')
+                    . NUVEI_CLASS::get_param($this->requestData, 'totalAmount', 'float')
+                    . NUVEI_CLASS::get_param($this->requestData, 'currency')
+                    . NUVEI_CLASS::get_param($this->requestData, 'responseTimeStamp')
+                    . NUVEI_CLASS::get_param($this->requestData, 'PPP_TransactionID')
                     . $this->get_request_status()
-                    . NUVEI_CLASS::get_param('productId')
+                    . NUVEI_CLASS::get_param($this->requestData, 'productId')
             );
 
-            if (NUVEI_CLASS::get_param('advanceResponseChecksum') == $str) {
+            if ($advanceResponseChecksum == $str) {
                 return true;
             }
 
@@ -571,15 +572,13 @@ class ControllerExtensionPaymentNuvei extends Controller
 		}
 		
 		# subscription DMN with responsechecksum case
-		$concat        = '';
-		$request_arr   = $_REQUEST;
 		$custom_params = array(
 			'route'             => '',
 			'responsechecksum'  => '',
 		);
 		
 		// remove parameters not part of the checksum
-		$dmn_params = array_diff_key($request_arr, $custom_params);
+		$dmn_params = array_diff_key($this->requestData, $custom_params);
 		$concat     = implode('', $dmn_params);
 		
 		$concat_final = $concat . trim($this->config->get(NUVEI_SETTINGS_PREFIX . 'secret'));
@@ -608,23 +607,16 @@ class ControllerExtensionPaymentNuvei extends Controller
      */
     private function get_request_status($params = array())
     {
-        if(empty($params)) {
-            if(isset($_REQUEST['Status'])) {
-                return filter_var($_REQUEST['Status'], FILTER_SANITIZE_STRING);
-            }
-
-            if(isset($_REQUEST['status'])) {
-                return filter_var($_REQUEST['status'], FILTER_SANITIZE_STRING);
-            }
+        if (empty($params) || !is_array($params)) {
+            $params = $this->requestData;
         }
-        else {
-            if(isset($params['Status'])) {
-                return filter_var($params['Status'], FILTER_SANITIZE_STRING);
-            }
+        
+        if(isset($params['Status'])) {
+            return strip_tags($params['Status']);
+        }
 
-            if(isset($params['status'])) {
-                return filter_var($params['status'], FILTER_SANITIZE_STRING);
-            }
+        if(isset($params['status'])) {
+            return strip_tags($params['status']);
         }
         
         return '';
@@ -668,12 +660,13 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $message		= '';
         $send_message	= true;
-        $trans_id       = NUVEI_CLASS::get_param('TransactionID');
-        $rel_tr_id      = NUVEI_CLASS::get_param('relatedTransactionId');
-        $payment_method = NUVEI_CLASS::get_param('payment_method', FILTER_SANITIZE_STRING);
-        $total_amount   = (float) NUVEI_CLASS::get_param('totalAmount');
+        $trans_id       = NUVEI_CLASS::get_param($this->requestData, 'TransactionID');
+        $rel_tr_id      = NUVEI_CLASS::get_param($this->requestData, 'relatedTransactionId');
+        $payment_method = NUVEI_CLASS::get_param($this->requestData, 'payment_method');
+        $total_amount   = NUVEI_CLASS::get_param($this->requestData, 'totalAmount', 'float');
         $status_id      = $this->order_info['order_status_id'];
         $order_total    = $this->get_price($this->order_info['total']);
+        $currency       = NUVEI_CLASS::get_param($this->requestData, 'currency');
         
         $comment_details = '<br/>' 
             . $this->language->get('Status: ') . $status . '<br/>'
@@ -682,7 +675,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             . $this->language->get('Related Transaction ID: ') . $rel_tr_id . '<br/>'
             . $this->language->get('Payment Method: ') . $payment_method . '<br/>'
             . $this->language->get('Total Amount: ') . $total_amount . '<br/>'
-            . $this->language->get('Currency: ') . NUVEI_CLASS::get_param('currency') . '<br/>';
+            . $this->language->get('Currency: ') . $currency  . '<br/>';
         
         switch($status) {
             case 'CANCELED':
@@ -735,14 +728,14 @@ class ControllerExtensionPaymentNuvei extends Controller
                 
                 // check for different Order Amount
                 if(in_array($transactionType, array('Sale', 'Auth'))) {
-                    $original_amount        = (float) NUVEI_CLASS::get_param('customField1');
-                    $original_curr          = NUVEI_CLASS::get_param('customField4');
+                    $original_amount    = NUVEI_CLASS::get_param($this->requestData, 'customField1', 'float');
+                    $original_curr      = NUVEI_CLASS::get_param($this->requestData, 'customField4', 'float');
                     
                     if ($order_total != $total_amount && $order_total != $original_amount) {
                         $this->total_curr_alert = true;
                     }
                     
-                    if ($this->order_info['currency_code'] != NUVEI_CLASS::get_param('currency') 
+                    if ($this->order_info['currency_code'] != $currency 
                         && $this->order_info['currency_code'] != $original_curr
                     ) {
                         $this->total_curr_alert = true;
@@ -752,8 +745,7 @@ class ControllerExtensionPaymentNuvei extends Controller
                         $msg = $this->language->get('Attention - the Order total is ') 
                             . $this->order_info['currency_code'] . ' ' . $order_total
                             . $this->language->get(', but the Captured amount is ')
-                            . NUVEI_CLASS::get_param('currency', FILTER_SANITIZE_STRING)
-                            . ' ' . $total_amount . '!';
+                            . $currency . ' ' . $total_amount . '!';
 
                         $this->model_checkout_order->addOrderHistory($order_id, $status_id, $msg, false);
                     }
@@ -768,16 +760,16 @@ class ControllerExtensionPaymentNuvei extends Controller
                 $message = $this->language->get('Your request faild.') . $comment_details
                     . $this->language->get('Reason: ');
                 
-                if( ($reason = NUVEI_CLASS::get_param('reason', FILTER_SANITIZE_STRING)) ) {
+                if( ($reason = NUVEI_CLASS::get_param($this->requestData, 'reason')) ) {
                     $message .= $reason;
                 }
-                elseif( ($reason = NUVEI_CLASS::get_param('Reason', FILTER_SANITIZE_STRING)) ) {
+                elseif( (NUVEI_CLASS::get_param($this->requestData, 'Reason')) ) {
                     $message .= $reason;
                 }
-                elseif( ($reason = NUVEI_CLASS::get_param('paymentMethodErrorReason', FILTER_SANITIZE_STRING)) ) {
+                elseif( ($reason = NUVEI_CLASS::get_param($this->requestData, 'paymentMethodErrorReason')) ) {
                     $message .= $reason;
                 }
-                elseif( ($reason = NUVEI_CLASS::get_param('gwErrorReason', FILTER_SANITIZE_STRING)) ) {
+                elseif( ($reason = NUVEI_CLASS::get_param($this->requestData, 'gwErrorReason')) ) {
                     $message .= $reason;
                 }
                 
@@ -785,9 +777,9 @@ class ControllerExtensionPaymentNuvei extends Controller
                 
                 $message .= 
                     $this->language->get("Error code: ") 
-                    . (int) NUVEI_CLASS::get_param('ErrCode') . '<br/>'
+                    . NUVEI_CLASS::get_param($this->requestData, 'ErrCode', 'int') . '<br/>'
                     . $this->language->get("Message: ") 
-                    . NUVEI_CLASS::get_param('message', FILTER_SANITIZE_STRING) . '<br/>';
+                    . NUVEI_CLASS::get_param($this->requestData, 'message') . '<br/>';
                 
                 if(in_array($transactionType, array('Sale', 'Auth'))) {
                     $status_id = $this->config->get(NUVEI_SETTINGS_PREFIX . 'failed_status_id');
@@ -802,15 +794,13 @@ class ControllerExtensionPaymentNuvei extends Controller
                 
                 // Refund
                 if($transactionType == 'Credit') {
-					//if($cl_unique_id) {
-						$formated_refund = $this->currency->format(
-                            $total_amount,
-							$this->order_info['currency_code'],
-							$this->order_info['currency_value']
-						);
-						
-						$message .= $this->language->get('Refund Amount: ') . $formated_refund;
-					//}
+                    $formated_refund = $this->currency->format(
+                        $total_amount,
+                        $this->order_info['currency_code'],
+                        $this->order_info['currency_value']
+                    );
+
+                    $message .= $this->language->get('Refund Amount: ') . $formated_refund;
                     
                     $status_id = $this->order_info['order_status_id'];
                     $send_message = false;
@@ -946,7 +936,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'userTokenId'       => $this->order_addresses['billingAddress']['email'],
             'urlDetails'        => array(
 				'backUrl'			=> $this->url->link('checkout/checkout', '', true),
-				'notificationUrl'   => $this->url->link(NUVEI_CONTROLLER_PATH . '/callback'),
+				'notificationUrl'   => NUVEI_CLASS::get_notify_url($this->url->link(NUVEI_CONTROLLER_PATH . '/callback')),
 			),
 		);
 		
@@ -1270,11 +1260,11 @@ class ControllerExtensionPaymentNuvei extends Controller
     
     private function get_order_info_by_dmn()
     {
-        $dmn_type               = NUVEI_CLASS::get_param('dmnType');
+        $dmn_type               = NUVEI_CLASS::get_param($this->requestData, 'dmnType');
         $order_id               = 0;
-        $trans_type             = NUVEI_CLASS::get_param('transactionType');
-        $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
-        $merchant_unique_id     = NUVEI_CLASS::get_param('merchant_unique_id');
+        $trans_type             = NUVEI_CLASS::get_param($this->requestData, 'transactionType');
+        $relatedTransactionId   = (int) NUVEI_CLASS::get_param($this->requestData, 'relatedTransactionId');
+        $merchant_unique_id     = NUVEI_CLASS::get_param($this->requestData, 'merchant_unique_id');
         $merchant_uid_arr       = explode('_', $merchant_unique_id);
         
         // default case
@@ -1295,7 +1285,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         // Subscription case
         elseif (in_array($dmn_type, ['subscription', 'subscriptionPayment'])) {
-            $client_req_id_arr = explode('_', NUVEI_CLASS::get_param('clientRequestId'));
+            $client_req_id_arr = explode('_', NUVEI_CLASS::get_param($this->requestData, 'clientRequestId'));
             
             if (is_array($client_req_id_arr)
                 && count($client_req_id_arr) > 0
@@ -1329,14 +1319,14 @@ class ControllerExtensionPaymentNuvei extends Controller
         NUVEI_CLASS::create_log($this->plugin_settings, 'Try Auto Void.');
         
         // not allowed Auto-Void
-        if (!in_array(NUVEI_CLASS::get_param('transactionType'), array('Auth', 'Sale'), true)) {
+        if (!in_array(NUVEI_CLASS::get_param($this->requestData, 'transactionType'), array('Auth', 'Sale'), true)) {
             NUVEI_CLASS::create_log($this->plugin_settings, 'The transacion is not in allowed range.');
             return;
         }
         
         // check the time
         $curr_time          = time();
-        $order_request_time	= NUVEI_CLASS::get_param('customField2'); // time of create/update order
+        $order_request_time	= NUVEI_CLASS::get_param($this->requestData, 'customField2', 'int'); // time of create/update order
 
         if (!is_numeric($order_request_time)) {
             $order_request_time = strtotime($order_request_time);
@@ -1349,7 +1339,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         }
         
         // save notifiation
-        $transId    = $this->db->escape(NUVEI_CLASS::get_param('TransactionID'));
+        $transId    = $this->db->escape(NUVEI_CLASS::get_param($this->requestData, 'TransactionID'));
         $query      = "INSERT INTO `" . DB_PREFIX . "setting` 
             (`store_id`,  `code`, `key`, `value`, `serialized`)
             VALUES (0, '" . trim(NUVEI_SETTINGS_PREFIX, '_') . "', 'trans_problem_" . $transId . "', '". $transId ."', 0)";
@@ -1365,11 +1355,12 @@ class ControllerExtensionPaymentNuvei extends Controller
             return;
         }
         
-        $notify_url     = $this->url->link(NUVEI_CONTROLLER_PATH . '/callback');
+        $notify_url = NUVEI_CLASS::get_notify_url($this->url->link(NUVEI_CONTROLLER_PATH . '/callback'));
+        
         $void_params    = [
             'clientUniqueId'        => date('YmdHis') . '-' . uniqid(),
-            'amount'                => (float) NUVEI_CLASS::get_param('totalAmount'),
-            'currency'              => NUVEI_CLASS::get_param('currency'),
+            'amount'                => (float) NUVEI_CLASS::get_param($this->requestData, 'totalAmount', 'float'),
+            'currency'              => NUVEI_CLASS::get_param($this->requestData, 'currency'),
             'relatedTransactionId'  => $transId,
             'url'                   => $notify_url,
             'urlDetails'            => ['notificationUrl' => $notify_url],
@@ -1398,9 +1389,9 @@ class ControllerExtensionPaymentNuvei extends Controller
     private function update_custom_fields($order_id)
     {
         $req_status             = $this->get_request_status();
-        $trans_id               = (int) NUVEI_CLASS::get_param('TransactionID');
-        $relatedTransactionId   = (int) NUVEI_CLASS::get_param('relatedTransactionId');
-        $trans_type             = NUVEI_CLASS::get_param('transactionType', FILTER_SANITIZE_STRING);
+        $trans_id               = (int) NUVEI_CLASS::get_param($this->requestData, 'TransactionID');
+        $relatedTransactionId   = (int) NUVEI_CLASS::get_param($this->requestData, 'relatedTransactionId');
+        $trans_type             = NUVEI_CLASS::get_param($this->requestData, 'transactionType');
         $order_data             = $this->order_info['payment_custom_field'];
         
         if(empty($order_data)) {
@@ -1426,18 +1417,18 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $order_data[] = array(
             'status'                => strtolower((string) $req_status),
-            'clientUniqueId'        => NUVEI_CLASS::get_param('clientUniqueId', FILTER_SANITIZE_STRING),
+            'clientUniqueId'        => NUVEI_CLASS::get_param($this->requestData, 'clientUniqueId'),
             'transactionType'       => $trans_type,
             'transactionId'         => $trans_id,
             'relatedTransactionId'  => $relatedTransactionId,
-            'userPaymentOptionId'   => (int) NUVEI_CLASS::get_param('userPaymentOptionId'),
-            'authCode'              => (int) NUVEI_CLASS::get_param('AuthCode'),
-            'totalAmount'           => round((float) NUVEI_CLASS::get_param('totalAmount'), 2),
-            'currency'              => NUVEI_CLASS::get_param('currency', FILTER_SANITIZE_STRING),
-            'paymentMethod'         => NUVEI_CLASS::get_param('payment_method', FILTER_SANITIZE_STRING),
-            'responseTimeStamp'     => NUVEI_CLASS::get_param('responseTimeStamp', FILTER_SANITIZE_STRING),
-            'originalTotal'         => NUVEI_CLASS::get_param('customField1', FILTER_SANITIZE_STRING),
-            'originalCurrency'      => NUVEI_CLASS::get_param('customField4', FILTER_SANITIZE_STRING),
+            'userPaymentOptionId'   => (int) NUVEI_CLASS::get_param($this->requestData, 'userPaymentOptionId', 'int'),
+            'authCode'              => (int) NUVEI_CLASS::get_param($this->requestData, 'AuthCode', 'int'),
+            'totalAmount'           => round((float) NUVEI_CLASS::get_param($this->requestData, 'totalAmount', 'float'), 2),
+            'currency'              => NUVEI_CLASS::get_param($this->requestData, 'currency'),
+            'paymentMethod'         => NUVEI_CLASS::get_param($this->requestData, 'payment_method'),
+            'responseTimeStamp'     => NUVEI_CLASS::get_param($this->requestData, 'responseTimeStamp', 'int'),
+            'originalTotal'         => NUVEI_CLASS::get_param($this->requestData, 'customField1'),
+            'originalCurrency'      => NUVEI_CLASS::get_param($this->requestData, 'customField4'),
             'totalCurrAlert'        => $this->total_curr_alert,
         );
         
@@ -1476,7 +1467,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'subscription_start()'
         );
         
-        $subscr_data = json_decode(NUVEI_CLASS::get_param('customField3'), true);
+        $subscr_data = NUVEI_CLASS::get_param($this->requestData, 'customField3', 'json');
         
 		if (!in_array($transactionType, array('Settle', 'Sale', 'Auth'))
             || 'APPROVED' != $this->get_request_status()
@@ -1490,7 +1481,7 @@ class ControllerExtensionPaymentNuvei extends Controller
 		}
         
         // allow recurring only for Zero Auth Orders
-        if('Auth' == $transactionType && 0 !== (int) NUVEI_CLASS::get_param('totalAmount')) {
+        if('Auth' == $transactionType && 0 != (float) NUVEI_CLASS::get_param($this->requestData, 'totalAmount', 'float')) {
             NUVEI_CLASS::create_log(
                 $this->plugin_settings, 
                 'The Auth Order total is not Zero. Do not start Rebilling'
@@ -1541,7 +1532,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         // save the Order in Recurring Orders section
         $query = 'INSERT INTO ' . DB_PREFIX . 'order_recurring '
             . '(`order_id`, `reference`, `product_id`, `product_name`, `product_quantity`, `recurring_id`, `recurring_name`, `recurring_description`, `recurring_frequency`, `recurring_cycle`, `recurring_duration`, `recurring_price`, `trial`, `trial_frequency`, `trial_cycle`, `trial_duration`, `trial_price`, `status`, `date_added`) '
-            . 'VALUES ('. $this->order_info['order_id'] .', '. (int) NUVEI_CLASS::get_param('TransactionID') .', '. $order_products->row['product_id'] .', "'. $order_products->row['name'] .'", '. $qty .', '. $prod_plan->row['recurring_id'] .', "'. $rec_name .'", "'. $rec_name .'", "'. $prod_plan->row['frequency'] .'", '. $prod_plan->row['cycle'] .', '. $prod_plan->row['duration'] .', '. $subscr_data['recurring_amount'] .', '. $prod_plan->row['trial_status'] .', "'. $prod_plan->row['trial_frequency'] .'", '. $prod_plan->row['trial_cycle'] .', '. $prod_plan->row['trial_duration'] .', '. $prod_plan->row['trial_price'] .', 6, NOW())';
+            . 'VALUES ('. $this->order_info['order_id'] .', '. NUVEI_CLASS::get_param($this->requestData, 'TransactionID') .', '. $order_products->row['product_id'] .', "'. $order_products->row['name'] .'", '. $qty .', '. $prod_plan->row['recurring_id'] .', "'. $rec_name .'", "'. $rec_name .'", "'. $prod_plan->row['frequency'] .'", '. $prod_plan->row['cycle'] .', '. $prod_plan->row['duration'] .', '. ( (float) $subscr_data['recurring_amount'] ) .', '. $prod_plan->row['trial_status'] .', "'. $prod_plan->row['trial_frequency'] .'", '. $prod_plan->row['trial_cycle'] .', '. $prod_plan->row['trial_duration'] .', '. $prod_plan->row['trial_price'] .', 6, NOW())';
         
         //NUVEI_CLASS::create_log($this->plugin_settings, $query, 'insert query');
         
@@ -1550,12 +1541,12 @@ class ControllerExtensionPaymentNuvei extends Controller
         // try to start rebillings
         $params = array(
             'clientRequestId'       => $order_id . '_' . uniqid(),
-            'userPaymentOptionId'   => (int) NUVEI_CLASS::get_param('userPaymentOptionId'),
-            'userTokenId'           => NUVEI_CLASS::get_param('user_token_id'),
-            'currency'              => NUVEI_CLASS::get_param('currency'),
+            'userPaymentOptionId'   => NUVEI_CLASS::get_param($this->requestData, 'userPaymentOptionId', 'int'),
+            'userTokenId'           => NUVEI_CLASS::get_param($this->requestData, 'user_token_id'),
+            'currency'              => NUVEI_CLASS::get_param($this->requestData, 'currency'),
             'initialAmount'         => 0,
             'planId'            => @$this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'plan_id'],
-            'recurringAmount'   => $subscr_data['recurring_amount'],
+            'recurringAmount'   => (float) $subscr_data['recurring_amount'],
             'recurringPeriod'   => [
                 $prod_plan->row['frequency'] => $prod_plan->row['cycle'],
             ],
@@ -1688,12 +1679,13 @@ class ControllerExtensionPaymentNuvei extends Controller
     {
         NUVEI_CLASS::create_log($this->plugin_settings, 'process_subs_state order_info');
         
-        if ('subscription' != NUVEI_CLASS::get_param('dmnType')) {
+        if ('subscription' != NUVEI_CLASS::get_param($this->requestData, 'dmnType')) {
             return;
         }
             
-        $subscriptionState = NUVEI_CLASS::get_param('subscriptionState');
-        $subscriptionId    = (int) NUVEI_CLASS::get_param('subscriptionId');
+        $subscriptionState  = NUVEI_CLASS::get_param($this->requestData, 'subscriptionState');
+        $subscriptionId     = NUVEI_CLASS::get_param($this->requestData, 'subscriptionId', 'int');
+        $planId             = NUVEI_CLASS::get_param($this->requestData, 'planId', 'int');
 
         if (empty($subscriptionState)) {
             $this->return_message('Subscription DMN missing subscriptionState. Stop the process.');
@@ -1711,14 +1703,14 @@ class ControllerExtensionPaymentNuvei extends Controller
         if ('active' == strtolower($subscriptionState)) {
             $message = $this->language->get('Subscription is Active.') . '<br/>'
                 . $this->language->get('Subscription ID: ') . $subscriptionId . '<br/>'
-                . $this->language->get('Plan ID: ') . (int) NUVEI_CLASS::get_param('planId');
+                . $this->language->get('Plan ID: ') . $planId;
 
             $rec_order_status = 1;
         }
         elseif ('inactive' == strtolower($subscriptionState)) {
             $message = $this->language->get('Subscription is Inactive.') . '<br/>'
                 . $this->language->get('Subscription ID:') . ' ' . $subscriptionId . '<br/>'
-                . $this->language->get('Plan ID:') . ' ' . (int) NUVEI_CLASS::get_param('planId');
+                . $this->language->get('Plan ID:') . ' ' . $planId;
 
             $rec_order_status = 2;
         }
@@ -1733,13 +1725,11 @@ class ControllerExtensionPaymentNuvei extends Controller
         // just add the ID without the details, we need only the ID to cancel the Subscription
         foreach($order_data as $key => $tansaction) {
             if(in_array($tansaction['transactionType'], ['Sale', 'Settle'])) {
-//                $order_data[$key]['subscrIDs'][] = (int) NUVEI_CLASS::get_param('subscriptionId');
-                $order_data[$key]['subscrIDs'] = (int) NUVEI_CLASS::get_param('subscriptionId');
+                $order_data[$key]['subscrIDs'] = $subscriptionId;
                 break;
             }
             elseif ('Auth' == $tansaction['transactionType'] && 0 == $tansaction['totalAmount']) {
-//                $order_data[$key]['subscrIDs'][] = (int) NUVEI_CLASS::get_param('subscriptionId');
-                $order_data[$key]['subscrIDs'] = (int) NUVEI_CLASS::get_param('subscriptionId');
+                $order_data[$key]['subscrIDs'] = $subscriptionId;
                 break;
             }
             
@@ -1795,10 +1785,10 @@ class ControllerExtensionPaymentNuvei extends Controller
     {
         NUVEI_CLASS::create_log($this->plugin_settings, 'process_subs_payment()');
         
-        $trans_id   = (int) NUVEI_CLASS::get_param('TransactionID');
+        $trans_id   = NUVEI_CLASS::get_param($this->requestData, 'TransactionID');
         $req_status = $this->get_request_status();
         
-        if ('subscriptionPayment' != NUVEI_CLASS::get_param('dmnType') || 0 == $trans_id) {
+        if ('subscriptionPayment' != NUVEI_CLASS::get_param($this->requestData, 'dmnType') || 0 == $trans_id) {
             return;
         }
         
@@ -1806,10 +1796,11 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         // in order_recurring_transaction table we save the total in default value
         // but we get it in Order currency
-        $rec_amount_default     = (float) NUVEI_CLASS::get_param('totalAmount') / $this->order_info['currency_value'];
+        $rec_amount_default     = NUVEI_CLASS::get_param($this->requestData, 'totalAmount', 'float') 
+            / $this->order_info['currency_value'];
         $rec_amount_formatted   = $this->currency->format(
             $rec_amount_default,
-            NUVEI_CLASS::get_param('currency')
+            NUVEI_CLASS::get_param($this->requestData, 'currency')
         );
         
 //        NUVEI_CLASS::create_log($this->plugin_settings, $rec_amount_default);
@@ -1817,8 +1808,9 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $message = $this->language->get('Subscription Payment was made.') . '<br/>'
             . $this->language->get('Status: ') . $req_status . '<br/>'
-            . $this->language->get('Plan ID: ') . (int) NUVEI_CLASS::get_param('planId') . '<br/>'
-            . $this->language->get('Subscription ID: ') . (int) NUVEI_CLASS::get_param('subscriptionId') . '<br/>'
+            . $this->language->get('Plan ID: ') . NUVEI_CLASS::get_param($this->requestData, 'planId', 'int') . '<br/>'
+            . $this->language->get('Subscription ID: ') 
+                . NUVEI_CLASS::get_param($this->requestData, 'subscriptionId', 'int') . '<br/>'
             . $this->language->get('Amount: ') . $rec_amount_formatted . '<br/>'
             . $this->language->get('TransactionId: ') . $trans_id;
 

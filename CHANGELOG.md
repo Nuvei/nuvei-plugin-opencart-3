@@ -5,6 +5,10 @@
 # 2.2.0
 ```
     * Exposed additional settings for Google Pay.
+    * Allow usage of ApplePay on all possible browsers.
+    * ApplePay and Gpay were moved into the Gallery.
+    * Added a check for the possible DMN URL constant NUVEI_CUSTOM_DMN_URL.
+    * Do not use the deprecated FILTER_SANITIZE_STRING flag anymore.
 ```
 
 # 2.1.1

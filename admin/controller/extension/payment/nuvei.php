@@ -18,10 +18,17 @@ class ControllerExtensionPaymentNuvei extends Controller
     
     private $data               = []; // the data for the admin template
     private $plugin_settings    = [];
+    private $requestData        = [];
 	private $prefix             = '';
 	private $notify_url         = '';
     private $ajax_action        = '';
 	
+    public function __construct($registry) {
+        parent::__construct($registry);
+
+        $this->requestData = array_merge($this->request->get, $this->request->post);
+    }
+    
     public function install()
     {
         // Load the event model to add a new event
@@ -508,6 +515,7 @@ class ControllerExtensionPaymentNuvei extends Controller
         );
 
         $this->notify_url   = str_replace('admin/', '', $this->notify_url);
+        $this->notify_url   = NUVEI_CLASS::get_notify_url($this->notify_url);
 		$request_amount     = round((float) $this->request->post['amount'], 2);
 		
 		NUVEI_CLASS::create_log(
@@ -804,8 +812,8 @@ class ControllerExtensionPaymentNuvei extends Controller
             . '/callback&action=' . $this->ajax_action . '&order_id=' . $order_id
         );
 
-        $this->notify_url = str_replace('admin/', '', $this->notify_url);
-        
+        $this->notify_url   = str_replace('admin/', '', $this->notify_url);
+        $this->notify_url   = NUVEI_CLASS::get_notify_url($this->notify_url);
         $this->data         = $this->model_sale_order->getOrder($order_id);
         $time               = date('YmdHis', time());
         $last_allowed_trans = array();
@@ -935,7 +943,7 @@ class ControllerExtensionPaymentNuvei extends Controller
     {
         NUVEI_CLASS::create_log($this->plugin_settings, 'subscription_cancel');
         
-        $order_id = NUVEI_CLASS::get_param('orderId', FILTER_VALIDATE_INT);
+        $order_id = NUVEI_CLASS::get_param($this->requestData, 'orderId', 'int');
         
         // search for active subscription
         if(!$this->is_active_recurring($order_id)) {

@@ -52,7 +52,7 @@ class NUVEI_CLASS
         // deviceDetails
         'deviceType' => array(
             'length' => 10,
-            'flag'    => FILTER_SANITIZE_STRING
+            'flag'    => FILTER_DEFAULT
         ),
         'deviceName' => array(
             'length' => 255,
@@ -66,10 +66,6 @@ class NUVEI_CLASS
             'length' => 255,
             'flag'    => FILTER_DEFAULT
         ),
-//        'ipAddress' => array(
-//            'length' => 15,
-//            'flag'    => FILTER_VALIDATE_IP
-//        ),
         // deviceDetails END
         
         // userDetails, shippingAddress, billingAddress
@@ -103,11 +99,11 @@ class NUVEI_CLASS
         ),
         'country' => array(
             'length' => 20,
-            'flag'    => FILTER_SANITIZE_STRING
+            'flag'    => FILTER_DEFAULT
         ),
         'state' => array(
             'length' => 2,
-            'flag'    => FILTER_SANITIZE_STRING
+            'flag'    => FILTER_DEFAULT
         ),
         'county' => array(
             'length' => 255,
@@ -312,7 +308,7 @@ class NUVEI_CLASS
 			return $device_details;
 		}
 		
-		$user_agent = strtolower(filter_var($_SERVER['HTTP_USER_AGENT'], FILTER_SANITIZE_STRING));
+		$user_agent = strtolower($_SERVER['HTTP_USER_AGENT']);
 		
 		if (empty($user_agent)) {
 			$device_details['Warning'] = 'Probably the merchant Server has problems with PHP filter_var function!';
@@ -371,28 +367,54 @@ class NUVEI_CLASS
     }
     
     /**
-     * function get_param
      * 
-     * Helper function to safety access request parameters
-     * 
-     * @param type $name
-     * @param type $filter
-     * 
-     * @return mixed
+     * @param array $request
+     * @param string $key
+     * @param string $type
+     * @param mixed $default
      */
-    public static function get_param($name, $filter = FILTER_DEFAULT)
+    public static function get_param($request, string $key, string $type = 'string', $default = null)
     {
-        $val = filter_input(INPUT_GET, $name, $filter);
+        $value = $default;
         
-        if(null === $val || false === $val) {
-            $val = filter_input(INPUT_POST, $name, $filter);
+        if (isset($request[$key])) {
+            $value = $request->post[$key];
         }
-        
-        if(null === $val || false === $val) {
-            return false;
+        else {
+            return $default;
         }
-        
-        return $val;
+
+        // 2. Санитизация според очаквания тип
+        switch ($type) {
+            case 'int':
+                return (int) $value;
+
+            case 'float':
+                return (float) $value;
+
+            case 'bool':
+                return (bool) $value;
+
+            case 'array':
+                return is_array($value) ? $value : [];
+                
+            case 'json':
+                if (is_array($value)) {
+                    return $value;
+                }
+
+                $decoded = json_decode(html_entity_decode((string)$value, ENT_QUOTES, 'UTF-8'), true);
+
+                return (json_last_error() === JSON_ERROR_NONE) ? $decoded : $default;
+
+            case 'string':
+            default:
+                if (is_array($value)) {
+                    return $default; // Защита срещу масив, изпратен вместо стринг
+                }
+                
+                return trim(strip_tags((string) $value));
+        }
     }
     
 	/**
@@ -595,6 +617,24 @@ class NUVEI_CLASS
     }
     
     /**
+     * In case we use a constant with hard-coded URL we will modify the 
+     * real URL with it, here.
+     * 
+     * @param string $url
+     */
+    public static function get_notify_url($url)
+    {
+        // modify the URL
+        if (defined('NUVEI_CUSTOM_DMN_URL') && !empty(NUVEI_CUSTOM_DMN_URL)) {
+            // example for $url - http://localhost:8085/index.php?route=extension/payment/nuvei/callback
+            return NUVEI_CUSTOM_DMN_URL;
+        }
+        
+        // just return the same URL
+        return $url;
+    }
+    
+    /**
 	 * Get the URL to the endpoint, without the method name, based on the site mode.
 	 * 
      * @param array $settings The plugin settings.
@@ -670,7 +710,12 @@ class NUVEI_CLASS
                     self::create_log($key1, 'Limit');
                 }
                 
-                $params[$key1] = filter_var($new_val, self::$params_validation[$key1]['flag']);
+                if (FILTER_DEFAULT == self::$params_validation[$key1]['flag']) {
+                    $params[$key1] = strip_tags($new_val);
+                }
+                else {
+                    $params[$key1] = filter_var($new_val, self::$params_validation[$key1]['flag']);
+                }
             }
 			elseif (is_array($val1) && !empty($val1)) {
                 foreach ($val1 as $key2 => $val2) {
@@ -683,7 +728,12 @@ class NUVEI_CLASS
                             self::create_log($key2, 'Limit');
                         }
 
-                        $params[$key1][$key2] = filter_var($new_val, self::$params_validation[$key2]['flag']);
+                        if (FILTER_DEFAULT == self::$params_validation[$key2]['flag']) {
+                            $params[$key1][$key2] = $new_val;
+                        }
+                        else {
+                            $params[$key1][$key2] = filter_var($new_val, self::$params_validation[$key2]['flag']);
+                        }
                     }
                 }
             }

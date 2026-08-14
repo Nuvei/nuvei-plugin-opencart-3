@@ -171,8 +171,9 @@
         
         console.log(nuveiCheckoutSdkParams);
         
-        nuveiCheckoutSdkParams.prePayment   = nuveiPrePayment;
-        nuveiCheckoutSdkParams.onResult		= nuveiAfterSdkResponse;
+        nuveiCheckoutSdkParams.prePayment           = nuveiPrePayment;
+        nuveiCheckoutSdkParams.onResult             = nuveiAfterSdkResponse;
+        nuveiCheckoutSdkParams.crossBrowserApplePay = true;
         
         if (typeof checkout.destroy == 'function') {
             checkout.destroy();
