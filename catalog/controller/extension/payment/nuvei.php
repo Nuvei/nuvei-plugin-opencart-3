@@ -25,7 +25,7 @@ class ControllerExtensionPaymentNuvei extends Controller
     public function __construct($registry) {
         parent::__construct($registry);
         
-        $this->requestData = array_merge($this->request->get, $this->request->post);
+        $this->requestData = array_merge((array) $this->request->get, (array) $this->request->post);
     }
     
 	public function index()
