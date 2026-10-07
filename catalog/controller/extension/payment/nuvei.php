@@ -127,6 +127,12 @@ class ControllerExtensionPaymentNuvei extends Controller
             'buttonLocation'    => 'gallery',
         );
         
+        $simplyEnv = 1 == $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'test_mode'] ? 'test' : 'prod';
+        
+        if (defined('NUVEI_LOCAL_CONF') && !empty(NUVEI_LOCAL_CONF['simply_env'])) {
+            $simplyEnv = NUVEI_LOCAL_CONF['simply_env'];
+        }
+        
         $data['nuvei_sdk_params'] = [
             'renderTo'               => '#nuvei_checkout',
             'strict'                 => false,
@@ -134,7 +140,7 @@ class ControllerExtensionPaymentNuvei extends Controller
             'maskCvv'                => true,
             'showResponseMessage'    => false,
             'sessionToken'           => $order_data['sessionToken'],
-            'env'                    => 1 == $this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'test_mode'] ? 'test' : 'prod',
+            'env'                    => $simplyEnv,
             'merchantId'             => trim($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'merchantId']),
             'merchantSiteId'         => trim($this->plugin_settings[NUVEI_SETTINGS_PREFIX . 'merchantSiteId']),
             'country'                => $order_data['billingAddress']['country'],
@@ -164,8 +170,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         ];
         
         // add specific parameter for QA site
-        if ($this->isQaSite()) {
-            $data['nuvei_sdk_params']['webSdkEnv'] = 'devmobile';
+        if (defined('NUVEI_LOCAL_CONF') && !empty(NUVEI_LOCAL_CONF['webSdk_env'])) {
+            $data['nuvei_sdk_params']['webSdkEnv'] = NUVEI_LOCAL_CONF['webSdk_env'];
         }
         
         $data['action'] = $this->url->link(NUVEI_CONTROLLER_PATH . '/process_payment')
@@ -388,8 +394,8 @@ class ControllerExtensionPaymentNuvei extends Controller
         
         $this->session->data['nuvei_last_oo_details'] = [];
 		
-        $this->order_info   = $this->model_checkout_order->getOrder($this->request->get['order_id']);
-        $order_id           = NUVEI_CLASS::get_param($this->requestData, 'order_id', 'int');
+        $order_id           = (int) $this->request->get['order_id'];
+        $this->order_info   = $this->model_checkout_order->getOrder($order_id);
 		$success_url        = $this->url->link(NUVEI_CONTROLLER_PATH . '/success') . '&order_id=' . $order_id;
         $error_url          = $this->url->link(NUVEI_CONTROLLER_PATH . '/fail') . '&order_id=' . $order_id;
 		
@@ -410,10 +416,12 @@ class ControllerExtensionPaymentNuvei extends Controller
      */
     public function addJsScriptsToCatalog(&$route, &$data)
     {
-        $this->document->addScript(
-            ($this->isQaSite() ? NUVEI_SDK_URL_TAG : NUVEI_SDK_URL_PROD), 
-            'footer'
-        );
+        if (defined('NUVEI_LOCAL_CONF') && !empty(NUVEI_LOCAL_CONF['simply_url'])) {
+            $this->document->addScript( NUVEI_LOCAL_CONF['simply_url'], 'footer' );
+        }
+        else {
+            $this->document->addScript( NUVEI_SDK_URL_PROD, 'footer' );
+        }
 
         // add Nuvei common modify script
         $this->document->addScript('catalog/view/javascript/nuvei_common_js_mod.js', 'footer');
@@ -532,33 +540,20 @@ class ControllerExtensionPaymentNuvei extends Controller
      */
     private function validate_dmn()
     {
-        $advanceResponseChecksum    = NUVEI_CLASS::get_param($this->requestData, 'advanceResponseChecksum');
-        $responsechecksum           = NUVEI_CLASS::get_param($this->requestData, 'responsechecksum');
-        
-		if (empty($advanceResponseChecksum) && empty($responsechecksum)) {
-            NUVEI_CLASS::create_log(
-                $this->plugin_settings,
-                'advanceResponseChecksum and responsechecksum parameters are empty.',
-                '',
-                'CRITICAL'
-            );
-			return false;
-		}
-		
 		// advanceResponseChecksum case
-		if (!empty($advanceResponseChecksum)) {
+		if (!empty($this->requestData['advanceResponseChecksum'])) {
             $str = hash(
                 $this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'),
                 trim($this->config->get(NUVEI_SETTINGS_PREFIX . 'secret'))
-                    . NUVEI_CLASS::get_param($this->requestData, 'totalAmount', 'float')
-                    . NUVEI_CLASS::get_param($this->requestData, 'currency')
-                    . NUVEI_CLASS::get_param($this->requestData, 'responseTimeStamp')
-                    . NUVEI_CLASS::get_param($this->requestData, 'PPP_TransactionID')
+                    . $this->requestData['totalAmount']
+                    . $this->requestData['currency']
+                    . $this->requestData['responseTimeStamp']
+                    . $this->requestData['PPP_TransactionID']
                     . $this->get_request_status()
-                    . NUVEI_CLASS::get_param($this->requestData, 'productId')
+                    . $this->requestData['productId']
             );
 
-            if ($advanceResponseChecksum == $str) {
+            if ($this->requestData['advanceResponseChecksum'] == $str) {
                 return true;
             }
 
@@ -568,33 +563,45 @@ class ControllerExtensionPaymentNuvei extends Controller
                 '',
                 'WARN'
             );
+            
             return false;
 		}
 		
 		# subscription DMN with responsechecksum case
-		$custom_params = array(
-			'route'             => '',
-			'responsechecksum'  => '',
-		);
-		
-		// remove parameters not part of the checksum
-		$dmn_params = array_diff_key($this->requestData, $custom_params);
-		$concat     = implode('', $dmn_params);
-		
-		$concat_final = $concat . trim($this->config->get(NUVEI_SETTINGS_PREFIX . 'secret'));
-		$checksum     = hash($this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'), $concat_final);
-		
-		if ($responsechecksum !== $checksum) {
-            NUVEI_CLASS::create_log(
-                $this->plugin_settings,
-                'responsechecksum validation fail.',
-                '',
-                'WARN'
+        if (!empty($this->requestData['responsechecksum'])) {
+            $custom_params = array(
+                'route'             => '',
+                'responsechecksum'  => '',
             );
-			return false;
-		}
-		
-		return true;
+
+            // remove parameters not part of the checksum
+            $dmn_params = array_diff_key($this->requestData, $custom_params);
+            $concat     = implode('', $dmn_params);
+
+            $concat_final = $concat . trim($this->config->get(NUVEI_SETTINGS_PREFIX . 'secret'));
+            $checksum     = hash($this->config->get(NUVEI_SETTINGS_PREFIX . 'hash'), $concat_final);
+
+            if ($this->requestData['responsechecksum'] !== $checksum) {
+                NUVEI_CLASS::create_log(
+                    $this->plugin_settings,
+                    'responsechecksum validation fail.',
+                    '',
+                    'WARN'
+                );
+                return false;
+            }
+
+            return true;
+        }
+        
+        NUVEI_CLASS::create_log(
+            $this->plugin_settings,
+            'advanceResponseChecksum and responsechecksum parameters are empty.',
+            '',
+            'CRITICAL'
+        );
+        
+        return false;
 	}
     
     /**
@@ -1858,6 +1865,8 @@ class ControllerExtensionPaymentNuvei extends Controller
      * Just check for the QA site.
      * 
      * @return bool
+     * 
+     * @deprecated since version 2.2.0
      */
     private function isQaSite()
     {

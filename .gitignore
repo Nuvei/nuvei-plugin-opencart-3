@@ -7,3 +7,4 @@ config.php
 /.ptp-sync/
 .ptp-sync-folder
 .github/*
+*.php
