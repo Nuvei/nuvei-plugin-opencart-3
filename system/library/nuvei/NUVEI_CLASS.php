@@ -271,8 +271,8 @@ class NUVEI_CLASS
             curl_setopt($ch, CURLOPT_POSTFIELDS, $json_post);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 
             $resp = curl_exec($ch);
             curl_close ($ch);
@@ -605,7 +605,7 @@ class NUVEI_CLASS
             'https://raw.githubusercontent.com/Nuvei/nuvei-plugin-opencart-3/main/CHANGELOG.md'
         );
 
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
         $file_text = curl_exec($ch);

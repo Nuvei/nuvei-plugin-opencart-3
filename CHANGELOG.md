@@ -9,6 +9,7 @@
     * ApplePay and Gpay were moved into the Gallery.
     * Added a check for a custom config file.
     * Do not use the deprecated FILTER_SANITIZE_STRING flag anymore.
+    * Verify the SSLs.
 ```
 
 # 2.1.1
